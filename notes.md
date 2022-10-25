@@ -46,15 +46,13 @@
 
 
 # Time schedule
-- 10.10.2022 Start -> Research & References
-- 17.10.2022 Setup Kubernetes and Simple Pods (on Windows)
-- 20.10.2022 Containerize OpenTwin
-- 07.11.2022 Code changes: Automatic replication based on kubernetes API
-- 12.12.2022 Testing / Bugfixing
-- 19.12.2023 Start Writing
-- 01.03.2023 Proofreading
-- 08.03.2023 Printing
-- ~12.03.2023 Submission / End
+- 14.10.2022 Start-> Setup Kubernetes and Simple Pods (on Windows)
+- 28.10.2022 Containerize OpenTwin
+- 07.12.2022 Code changes: Automatic replication based on kubernetes API
+- 01.02.2022 Testing / Bugfixing
+- 27.02.2023 Finalize Writing
+- 10.03.2023 Proofreading
+- ~17.03.2023 Submission / End
 
 
 
