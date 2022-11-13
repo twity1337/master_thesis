@@ -9,8 +9,15 @@
 
 
 \section{Baseline architecture}
+The current system design consists of multiple levels.
+
+
 
 \section{Problem statement}
+The existing application is clearly based on a microservice architecture.  However, it is not able to run on a distributed system yet. It consists of multiple processes that have to run on the same system and need a full working operating system as baseline. Containerization of the system has never been tested (erprobt) and needs to be introduced. 
+% Automatic service extension = Automatische erweiterung der Services auf neuen Nodes
+Additionally, the automatic service extension requires communication between the cluster orchestration management and the applications running on the nodes.
 
+Regarding logging, while the frontend application does, the microservices currently do not produce log files. Instead, all sub processes write the information on its standard output stream.
 
 \section{Related Work}
