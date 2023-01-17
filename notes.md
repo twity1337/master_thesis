@@ -63,3 +63,73 @@
 
 # References
 https://medium.com/swlh/how-to-create-kubernetes-objects-using-kubernetes-api-1baea18f54c1
+
+
+
+#  hcs::CreateComputeSystem flannel-hostprocess: The system cannot find the file specified.: unknown
+Irgendwas stimmt mit Dockerfile nicht.
+
+
+
+
+
+## flannel: OS wird nicht unterstützt
+### Eigener Build
+kubectl apply -f flannel-overlay.yml
+kubectl apply -f kube-flannel.yml
+
+https://github.com/kubernetes-sigs/sig-windows-tools/blob/master/hostprocess/flannel/build.sh
+
+
+AUf  Linux controlplane:
+- Neuste Version von Docker installieren (wegen buildx)
+- dateien von sig-windows-tools repo kopieren (container build context) 
+
+cd ./hostprocess/flannel/
+docker buildx create --name img-builder --use --platform windows/amd64
+docker buildx build --platform windows/amd64 --output=type=registry --pull --build-arg=flannelVersion="v0.13.0" -f Dockerfile -t local.dev/sigwindowstools/flannel:v0.13.0-hostprocess .
+docker buildx build --platform windows/amd64 --output=type=registry --pull --build-arg=k8sVersion="v1.25.3" -f Dockerfile -t local.dev/sigwindowstools/kube-proxy:v1.25.3-flannel-hostprocess .
+
+>> sudo docker buildx build --platform windows/amd64 --output=type=oci,dest=flannel.tar --pull --build-arg=flannelVersion="v0.13.0" -f Dockerfile -t local.dev/sigwindowstools/flannel:v0.13.0-hostprocess .
+scp user@172.18.80.110:~/build-flanneld-sigwindowstools/flannel.tar C:\Users\Administrator\Downloads\flannel.tar
+ctr -n k8s.io image import .\flannel.tar
+
+# Calico
+- kubeadm-flags.env --node-ip gesetzt (172.18.80.100)
+
+$env:KUBECONFIG="/etc/kubernetes/kubelet.conf"
+
+cd C:\k\
+New-Item -Name config -ItemType SymbolicLink -Value "C:\etc\kubernetes\kubelet.conf"
+
+
+
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: calico-node-token
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: calico-node
+type: kubernetes.io/service-account-token
+
+
+
+
+
+
+## Solved Problems
+- Hostprocess container --> OS  Version == Container Version   -> Registry
+- Containerd not possible to build an image, need to  build with docker, and shift to namespace k8s.io (by export/import)
+- Flannel --> Hyper-V? VPN used same IP?  -> Local cluster. Documentation from SIG-Windows-Tools used
+- Flannel under Windows -> Error for RBAC fixed
+- Containerd & Docker - Containerfile spec is same, but differently interpreted. Error if CMD is defined in JSON format under Containerd
+
+- Error reporting and logging extended for OpenTwin
+- Network binding of GlobalSessionService has to be on 0.0.0.0k, otherwise it's not reachable from outside?
+- Architecture, exception handling: "Rust cannot catch foreign exceptions", Window immediately closes on error --> fixed
+
+
+-- Exception handling open-twin
+-- GSS und AUTH außerhalb von Docker laufen lassen.
