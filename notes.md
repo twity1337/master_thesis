@@ -133,3 +133,47 @@ type: kubernetes.io/service-account-token
 
 -- Exception handling open-twin
 -- GSS und AUTH außerhalb von Docker laufen lassen.
+
+
+- Error: failed to create containerd task: failed to create shim task: hcs::CreateComputeSystem kube-flannel: "The directory name is invalid."
+https://stackoverflow.com/questions/74799620/kubernetes-windows-worker-node-addition-failed-to-create-containerd-task-hcss
+
+- Mongodb läuft nicht unter windows - keine Initialisierungsskripte
+
+- AuthorisationService - Password in command line argument ist platform/client abhängig (relevant bei Encrypt/Decrypt)
+
+MongoDB connection: 
+	 + "&tlsAllowInvalidHostnames=true&tlsCertificateKeyFile=E:\\OpenTwin\\Repo\\Deployment\\Certificates\\certificateKeyFile.pem"
+
+- [SSL Certification verification failed: hostname doesn't match certificate calling hello on '192.168.0.39:27017']: generic server error
+	- tlsAllowInvalidHostnames=true
+	
+- [Failed to receive length header from server. calling hello on '192.168.0.39:27017']: generic server error
+   - Keyfile mit übergeben
+   
+[Failed to initialize security context, error code: 0x80090331: Incorrect function. calling hello on '192.168.0.39:27017']: generic server error
+
+
+
+Bei MongoDb auf Physical machine: 
+-- Authorisation: docker logs container-opentwin-authorisation-1
+-> uiFrontend (von Host) -> Request auf AUTH in Docker (One-Way-TLS)/(Ping)
+> Error handling request: error shutting down connection: An established connection was aborted by the software in your host machine. (os error 10053)
+
+(Request auf GSS funktioniert stattdessen)
+
+
+- mTLS: OpenTwin neue Zertifikate auf Container erstellen mittels Skript
+--> Hostnames in json erweitern (localhost, 127.0.0.1)
+
+
+Mongo kann nicht in Docker liegen, weil:
+- GSS auf MongoDB zugreift und Launcher greift auch auf MongoDB zu.
+- Docker link: Würde ermöglichen, dass Container drauf zugreifen kann, dann stimmt aber übermittelte Adresse von AUTH nicht mehr und uiFrontend kann nicht drauf zugreifen
+- Localhost: Würde ermöglichen, dass uiFrontend zugreifen kann, dann kann aber AUTH nicht mehr zugreifen, weil localhost für AUTH der eigene Container ist.
+
+
+https://github.com/docker-library/mongo/discussions/599
+- Automatisierte Einrichtung von MongoDB auf Windows nicht möglich. (Init-Skripte funktionieren noch nicht in Docker)
+
+Zugriff von Docker auf Rechner außerhalb nicht möglich  -> Kann DB-Server auf Host liegen? Oder muss der auch auf Docker gehostet werden?
