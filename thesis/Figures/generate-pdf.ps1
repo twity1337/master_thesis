@@ -1,2 +1,6 @@
+Push-Location $PSScriptRoot
+
 Remove-Item *.pdf
-& "C:\Program Files\WindowsApps\draw.io.draw.ioDiagrams_20.8.10.0_x64__1zh33159kp73c\app\draw.io.exe" "D:\Benutzerordner\Eigene Dokumente\____Eigene Dateien____\Studium\Master\__Thesis\latex\thesis\Figures\" --crop -x -f pdf .
+& "$Env:ProgramFiles\WindowsApps\draw.io.draw.ioDiagrams_20.8.10.0_x64__1zh33159kp73c\app\draw.io.exe" . --crop -x -f pdf .
+
+Pop-Location
