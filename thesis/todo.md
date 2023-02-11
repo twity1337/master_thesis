@@ -56,3 +56,29 @@ Windows-Node:
 containerd, hyper-v, kubelet, nssm (non-sucking service manager)
 
 - Join command mittels: sudo kubeadm token create --print-join-command
+
+
+
+
+
+docker build -f .\session.Containerfile -t local.dev/opentwin-session:latest ..\Deployment\
+
+docker save local.dev/opentwin-session:latest -o container.tar
+
+ctr --namespace k8s.io image import .\container.tar
+ctr --namespace k8s.io run --rm -t local.dev/opentwin-session:latest opentwin-session
+
+echo Start:%time% &&^
+docker build -f .\session.Containerfile -t local.dev/opentwin-session:latest ..\..\Deployment\ && ^
+docker save local.dev/opentwin-session:latest -o container.tar && ^
+ctr --namespace k8s.io image import .\container.tar  &&^
+docker build -f .\globalsession.Containerfile -t local.dev/opentwin-globalsession:latest ..\..\Deployment\ && ^
+docker save local.dev/opentwin-globalsession:latest -o container.tar && ^
+ctr --namespace k8s.io image import .\container.tar  &&^
+docker build -f .\authorisation.Containerfile -t local.dev/opentwin-authorisation:latest ..\..\Deployment\ && ^
+docker save local.dev/opentwin-authorisation:latest -o container.tar && ^
+ctr --namespace k8s.io image import .\container.tar  &&^
+del container.tar &&^
+echo End:%time%
+
+

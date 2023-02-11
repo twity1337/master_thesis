@@ -87,6 +87,17 @@ Since the configuration changes needs to be served only to Windows machines (con
 % TODO: Evtl.- auf calico wechseln? Oder worker node als hostprocess ausführen
 % TODO: -- siehe: https://github.com/kubernetes-sigs/sig-windows-tools/issues/128
 
-After successful run of the preparation script the node was ready to join the cluster. For this, the 
+After successful run of the preparation script the node was ready to join the cluster.
+
+\section{Containerization of Application}
+% For containerizing the OpenTwin application, several changes were applied to the code base.
+
+
+
+% Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host os.
+% Deployment-Verzeichnis muss dafür initial auf Node kopiert werden.
+% TODO: (Skript ("setup-node") dafür schreiben, was neusten release von github zieht (RUN download?) und image autom. baut + image pusht?)  - base image (FROM) mittels args dynamisch gestalten?
+% dabei beachten, dass Klammern gesetzt werden (Json-Style) bei Entrypoint, da sonst zwar der Build bei docker funktioniert, aber das Image nicht in containerd läuft.
+% nach Bau von Image muss dieses in richtigen containerd namespace verschoben werden, wenn image lokal vorhanden und nicht von registry gezogen wird.
 
 
