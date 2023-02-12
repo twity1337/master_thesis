@@ -39,11 +39,11 @@ Since \ac{K8s} is the chosen orchestration engine, the following sections are ta
 
 \subsubsection{Entities}
 There are many entities for objects inside the cluster. For description of those entities the configuration language YAML is used. Some of the most widely used entities are described in the following paragraphs.
-\paragraph{Deployment} Deployments are used to define declarative states for Pods.
-\paragraph{Pod} A pod represents a set of running containers on a node.
-\paragraph{Daemon set}
-\paragraph{User}
-\paragraph{Node} A node represents a physical machine inside the cluster.
+\paragraph{Deployment} Deployments are used to define declarative states for Pods. This allows to maintain consecutive versions of the pod and upgrade them during runtime.
+\paragraph{Pod} A pod represents a set of running containers on a node. Each pod has additional information stored, such as Health state, the cluster internal network IP address or the amoun of replications.
+\paragraph{Daemon set} This ensures that multiple (or all) nodes run a certain pod\cite{Kubernetes.20220831}. Common use cases are tasks for all nodes or running the network overlay pod.
+\paragraph{User} This entity describes a user that  can acces the Kubernetes cluster and API services. Users can be part of a group and permission roles.
+\paragraph{Node} A node represents a physical machine inside the cluster. Nodes can run multiple pods.
 
 \subsubsection{Services}
 \ac{K8s} comes with a set of core services (see \autoref{fig.kubernetes-architecture}) that ensure the life span of scheduled containers, and the application services that offer the actual application.
