@@ -51,22 +51,24 @@ After setting up the prerequisites, the cluster can be initialized by running th
 sudo kubeadm init --config config.yaml
 \end{lstlisting}
 
-\paragraph{Installing a Container Network Interface}
+\subsubsection{Installing a Container Network Interface}
 After successfully running the initialization, the cluster overlay network \tcode{flannel} needs to be setup.
 This is required for working with Windows worker nodes.  To setup \tcode{flannel} the respective pod description can be directly downloaded from the vendor\footnote{https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml}. In the configuration the VNI (4096) and port (4789) for Flannel on Windows were set. Afterwards the configuration has been applied on the cluster.
 After linking kubectl to the local control plane node, the successful setup of the cluster can be checked with the \tcode{kubectl} command.
 
 
-\paragraph{Adding the proxy daemonsets}
+\subsubsection{Adding the proxy daemonsets}
 For using Windows worker nodes in a Kubernetes cluster, additional configmaps and daemonsets need to be applied on the cluster. Those are used for setting up a proxy for \tcode{flannel}.
 \begin{lstlisting}
-curl -L https://github.com/kubernetes-sigs/sig-windows-tools/releases/latest/download/kube-proxy.yml | sed 's/VERSION/v1.25.3/g' | kubectl apply -f -
-kubectl apply -f https://github.com/kubernetes-sigs/sig-windows-tools/releases/latest/download/flannel-overlay.yml
+curl -L https://github.com/kubernetes-sigs/sig-windows-tools/releases/latest \
+  /download/kube-proxy.yml | sed 's/VERSION/v1.25.3/g' | kubectl apply -f -
+kubectl apply -f https://github.com/kubernetes-sigs/sig-windows-tools/releases \
+  /latest/download/flannel-overlay.yml
 \end{lstlisting}
 
 \subsection{Creating the worker node}
 % Prereqs: Hyper-V,  Containers, crictl
-On the Windows worker node, the prerequisites were installed first. While installing the prerequisite \tcode{crictl} it was added to the \tcode{PATH} environment variable. After the setup, the node preparation scripts of the Kubernetes \ac{sig} were retrieved. Before running the scripts, the \ac{CNI} version needs to be aligned to the same version written on the master node. Therefore the appearances of v0.2.0 have been replaced with v0.3.0 respectively.
+On the Windows worker node, the prerequisites were installed first. While installing the prerequisite \tcode{crictl} it was added to the \tcode{PATH} environment variable. After the setup, the node preparation scripts of the Kubernetes \ac{SIG} were retrieved. Before running the scripts, the \ac{CNI} version needs to be aligned to the same version written on the master node. Therefore the appearances of v0.2.0 have been replaced with v0.3.0 respectively.
 Afterwards the installation script was executed. It sets up the \ac{NAT} configuration on the worker node and registers containerd as a service.
 % [plugins."io.containerd.grpc.v1.cri"].sandbox_image
 For having a valid image at a later point in time, the value sandbox\_image in cri in containerd's configuration file (config.toml) needs to be replaced with a newer version.
