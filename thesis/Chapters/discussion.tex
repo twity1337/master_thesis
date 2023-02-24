@@ -8,7 +8,11 @@
 
 \section{Analysis}
 
-\section{Known issues and pitfalls}
+\begin{comment}
+
+\section{Discovered issues and pitfalls}
+The development of the \ac{K8s} cluster and the containerization of \ac{OT} hides several pitfalls. These are discussed in this chapter.
+
 
 - Containerfile support differs from Dockerfile: Path of ENTRYPOINT is not treated the same way.
 - K8s Documentation redirects to a different page when searching for tutorial for adding windows nodes
@@ -23,3 +27,8 @@
 - Cluster networking throws weird error messages when performed inside hyper-v vm ("Directory not found")
 
 - Docker support was removed, containerd is not fully supported yet (without bugs) in Windows
+
+- OpenTwin needs to be compiled on the system it is running. Developers need to fix this issue.
+
+
+\end{comment}

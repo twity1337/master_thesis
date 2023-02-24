@@ -7,9 +7,12 @@
 % \begin{lstlisting}[label={lst:swapoff}, caption={Bash commands for turning off swapping in Linux Debian}]
 % \end{lstlisting}
 
+\section{Containerization of Services}
+Container images are provided for running the application inside the \ac{CRI}. Definition of the container manifest is done in the "Containerfile"\footnote{https://www.mankier.com/5/Containerfile} format is used.
+- Build has to be done inside the container. / All binary files are part of the container image.
 
 \section{Cluster Setup}
-The following section describes the setup of different machines in the cluster, so called nodes. While the master node refers to the Kubernetes Control-Plane node which is responsible for distribution of the workers, the worker nodes are the actual machines that are executing the applications. During development the cluster was set up on virtual machines completely, due to the lack of physical hardware.
+The following section describes the setup of different machines in the cluster, so called nodes. While the master node refers to the \ac{K8s} Control-Plane node which is responsible for distribution of the workers, the worker nodes are the actual machines that are executing the applications. During development the cluster was set up on virtual machines completely, due to the lack of physical hardware.
 
 
 \subsection{Creating the master node}

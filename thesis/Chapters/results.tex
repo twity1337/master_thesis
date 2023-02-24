@@ -1,0 +1,47 @@
+% !TeX spellcheck = en_US
+\chapter{Results} % Main chapter title
+
+\label{chap:results} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
+
+\lhead{Chapter \ref*{chap:results}. \emph{Results}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+
+The development of the \ac{K8s} cluster and the containerization of \ac{OT} hides several pitfalls. These are discussed in this chapter.
+
+\section{Containerization}
+During the containerization of the application, the issues that require consideration are discussed in this section.
+
+\subsection{Container manifest}
+Even though the format of the container manifests "Containerfile" is compatible to the proprieteary "Dockerfile" format from Docker, the \acp{CRI} do not follow the specification everywhere\cite. This is an issue while writing a Containerfile for the ContainerD \ac{CRI}. Especially in cases where line breaks in the Containerfile might be necessary to shorten long lines and increase readability. ContainerD is treating line breaks paths in string notation different compared to paths in JSON array notation and is not following the specification\cite{ManKier.20230222}.
+\begin{lstlisting}[caption={Containerfile entrypoint specification across multiple lines in text format.}, label=lst:results.containerfile-entrypoint.text]
+ENTRYPOINT open_twin.exe \
+Service.dll
+\end{lstlisting}
+\autoref{lst:results.containerfile-entrypoint.text} shows an example of the problem. While the entry point in Docker is interpreted as \textit{open\_twin.exe Service.dll}, the interpreter in ContainerD only reads the first line as entry point and ignores the line break character "\" as in \textit{open\_twin.exe}. To overcome this flaw, the \textit{ENTRYPOINT} definition has to be written in JSON notation. If defined as in \autoref{lst:results.containerfile-entrypoint.json} the interpreter 
+\begin{lstlisting}[caption={Containerfile entrypoint specification across multiple lines in JSON format.}, label=lst:results.containerfile-entrypoint.json]
+ENTRYPOINT ["open_twin.exe", 
+"Service.dll"]
+\end{lstlisting}
+
+
+\subsection{Windows Base Image}
+While it is normal to have a requirement for the same operating system kernel when running container images, it is a uncommon requirement to have the exact same build version.
+
+- Windows base image has to have same build number than host computer (not the same in linux containers)
+
+- OpenTwin needs to be compiled on the system it is running. Developers need to fix this issue.
+
+\section{Discovered issues and pitfalls}
+
+
+
+- K8s Documentation redirects to a different page when searching for tutorial for adding windows nodes
+- Error messages of Windows hcs shim are not explanatory
+
+- Windows needs to have certain Update installed to run flannel container
+
+
+- Scripts and docs are maintained by a relatively small community (SIG windows tools)
+
+- Cluster networking throws weird error messages when performed inside hyper-v vm ("Directory not found")
+
+- Docker support was removed, containerd is not fully supported yet (without bugs) in Windows

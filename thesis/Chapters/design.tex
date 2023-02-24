@@ -105,17 +105,26 @@ Containerd is a native version of a container runtime. Newer versions of Docker,
 
 
 \section{Container Image}
-The container images to use for running the OpenTwin processes need to run a \ac{Windows} base image. Beside the full \ac{Windows} images, Microsoft\textsuperscript{\tiny\textregistered} offers the more common images "\ac{Windows} Server Core" and "\ac{Windows} Nanoserver"\cite{MattbriggsMicrosoft.20230214}. They significantly differ in the download size and their on-disk footprint and the features supported\cite{MattbriggsMicrosoft.20230214}. As Microsoft states, "Nanoserver was built to provide just enough \ac{API} surface to run apps that have a dependency on .NET core or other modern open source frameworks\cite{MattbriggsMicrosoft.20230214}. PowerShell, Windows Management Instrumentation, and the \ac{Windows} servicing stack are absent from the Nanoserver image\cite{MattbriggsMicrosoft.20230214}".
+The container image consists of a base part and a part for custom configuration. Both are further explained in the following sections.
+
+Container images are described, using the Containerfile\footnote{Containerfile: https://www.mankier.com/5/Containerfile} format.
+There are container images for each process of the system architecture, each of them having their own Containerfile definition with different command line arguments and environment variables.
 
 
+\subsection{Base image}
+The container images to use for running the OpenTwin processes need to run a \ac{Windows} base image. Beside the full \ac{Windows} images, Microsoft\textsuperscript{\tiny\textregistered} offers the more common images "\ac{Windows} Server Core" and "\ac{Windows} Nanoserver"\cite{MattbriggsMicrosoft.20230214}. They significantly differ in the download size, their on-disk footprint and the features supported\cite{MattbriggsMicrosoft.20230214}. As Microsoft states, "Nanoserver was built to provide just enough \ac{API} surface to run apps that have a dependency on .NET core or other modern open source frameworks. PowerShell, Windows Management Instrumentation, and the \ac{Windows} servicing stack are absent from the Nanoserver image"\cite{MattbriggsMicrosoft.20230214}.
 
-The Server Core image is not the smallest image. However, for the current use case it is the smallest image with full functional support for the required technologies. 
+The Server Core image is not the smallest base image. However, for the current use case it is the smallest image with full functional support for the required technologies. 
 
 % Warum dieses \ac{Windows} image?
 % \ac{Windows} Server Core and Nanoserver are the most common base images to target. The key difference between these images is that Nanoserver has a significantly smaller \ac{API} surface. PowerShell, WMI, and the \ac{Windows} servicing stack are absent from the Nanoserver image.
 % Nanoserver was built to provide just enough \ac{API} surface to run apps that have a dependency on .NET core or other modern open source frameworks. As a tradeoff to the smaller \ac{API} surface, the Nanoserver image has a significantly smaller on-disk footprint than the rest of the \ac{Windows} base images. Keep in mind that you can always add layers on top of Nano Server as you see fit. For an example of this check out the .NET Core Nano Server Dockerfile.
 % Quelle: https://learn.microsoft.com/en-us/virtualization/\ac{Windows}containers/manage-containers/container-base-images
 
+\subsection{Custom image}
+On top of the base image, customizations and the actual application are applied. The binary files are included in the container image and added during build. The common \acp{CRI} only forward the output of processes with process id 1 to the host machine. Furthermore, this is also the only process the  \ac{CRI} is waiting for, to keep the container alive. Thus, instead of using the provided batch files to start the application services, the OpenTwin process is called directly with the appropriate command line arguments as command for the container.
+Therefore, the environment variables needs to be set up as part of the container file.
+The root certificate (certificate authority) is passed as file mount into the container later on.
 
 
 \section{Target architecture}
