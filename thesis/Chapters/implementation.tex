@@ -11,6 +11,22 @@
 Container images are provided for running the application inside the \ac{CRI}. Definition of the container manifest is done in the "Containerfile"\footnote{https://www.mankier.com/5/Containerfile} format is used.
 - Build has to be done inside the container. / All binary files are part of the container image.
 
+% For containerizing the OpenTwin application, several changes were applied to the code base.
+
+% Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host os.
+% Deployment-Verzeichnis muss dafür initial auf Node kopiert werden.
+% TODO: (Skript ("setup-node") dafür schreiben, was neusten release von github zieht (RUN download?) und image autom. baut + image pusht?)  - base image (FROM) mittels args dynamisch gestalten?
+% dabei beachten, dass Klammern gesetzt werden (Json-Style) bei Entrypoint, da sonst zwar der Build bei docker funktioniert, aber das Image nicht in containerd läuft.
+% nach Bau von Image muss dieses in richtigen containerd namespace verschoben werden, wenn image lokal vorhanden und nicht von registry gezogen wird.
+
+
+% TODO: Skript zum bauen des Images beschreiben
+% TODO: Containerfile
+
+
+
+
+
 \section{Cluster Setup}
 The following section describes the setup of different machines in the cluster, so called nodes. While the master node refers to the \ac{K8s} Control-Plane node which is responsible for distribution of the workers, the worker nodes are the actual machines that are executing the applications. During development the cluster was set up on virtual machines completely, due to the lack of physical hardware.
 
@@ -94,15 +110,9 @@ Since the configuration changes needs to be served only to Windows machines (con
 
 After successful run of the preparation script the node was ready to join the cluster.
 
-\section{Containerization of Application}
-% For containerizing the OpenTwin application, several changes were applied to the code base.
 
+\section{Automatic setup}
+% TODO: Powershell script beschreiben
 
-
-% Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host os.
-% Deployment-Verzeichnis muss dafür initial auf Node kopiert werden.
-% TODO: (Skript ("setup-node") dafür schreiben, was neusten release von github zieht (RUN download?) und image autom. baut + image pusht?)  - base image (FROM) mittels args dynamisch gestalten?
-% dabei beachten, dass Klammern gesetzt werden (Json-Style) bei Entrypoint, da sonst zwar der Build bei docker funktioniert, aber das Image nicht in containerd läuft.
-% nach Bau von Image muss dieses in richtigen containerd namespace verschoben werden, wenn image lokal vorhanden und nicht von registry gezogen wird.
 
 

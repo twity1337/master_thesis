@@ -35,10 +35,12 @@
 The development team consists of a small core team and several student groups during the semester.
 
 
+% TODO: Auflistung der Compute Services
+
 \section{Baseline architecture}
 The current system design consists of multiple levels. It is a multi-process application based on the programming languages C++ and Rust. The source code is mainly aligned to be built on Microsoft \ac{Windows}. A port to Unix based systems is currently in work. Therefore parts of the code base are aligned for multiple system architectures already, but the application is not yet able to be compiled for Linux.
 
-Each microservice of the application is included dynamically and linked as a \ac{DLL} file. For starting the microservice environment, a central executable ("open\_\ twin.exe") is started with the corresponding arguments for the services (like binding address, port numbers, encrypted passwords) (see~\autoref{lst:ot-command}) and the path to the \ac{DLL} file itself. The UI frontend, which is started by the user directly, is compiled in its own executable ("uiFrontend.exe"). \autoref{tbl:ot-command-args} shows the main services and its corresponding parameters.
+Each microservice of the application is included dynamically and linked as a \ac{DLL} file. For starting the microservice environment, a central executable ("open\_\ twin.exe") is started with the corresponding arguments for the services (like binding address, port numbers, encrypted passwords) (see~\autoref{lst:ot-command}) and the path to the \ac{DLL} file itself. The UI front end, which is started by the user directly, is compiled in its own executable ("uiFrontend.exe"). \autoref{tbl:ot-command-args} shows the main services and its corresponding parameters.
 
 \begin{lstlisting}[language=sh, caption={Command line of Open Twin Service start}, label=lst:ot-command]
 open_twin.exe GlobalSessionService.dll \
@@ -64,28 +66,41 @@ open_twin.exe GlobalSessionService.dll \
 
 For conveniently running the services with all their necessary arguments, batch files were provided that read environment variables and convert them into runtime arguments for the service executable. Therefore, if the services are started locally, the user runs a batch files that sets up the environment.
 
-The system consists of the following microservices that are permanently accessible: \ac{GSS}, \ac{AUTH} and the database. The database is running on MongoDB\footnote{MongoDB:~https://www.mongodb.com/}. Another Service is the \ac{LSS} that spawns the so called application services. Those are services for logging, scripting, 3D modeling, kriging and so on.
-While \ac{GSS}, \ac{AUTH} and database are globally accessible, the \ac{LSS} can theoretically run on a dedicated host and is only communicated to other parties after it has registered itself to the \ac{GSS}.
+The system consists of the following micro services that are permanently accessible: \acf{GSS}, \acf{AUTH} and the database. The database is running on MongoDB\footnote{MongoDB:~https://www.mongodb.com/}. Another Service is the \acf{LSS} that spawns the so called compute services. Those are services for logging, scripting, 3D modeling, kriging. In total there are XXX compute services, that can dynamically spawn and exit.
+A list of all services can be found in Table XXXX.
+Each service runs in its own operating system process.
+% TODO: Table of Services, amount of total Services
 
-Once started, the user can login. In order to connect to the database, the following steps are performed:
-\begin{enumerate}
-\item The \ac{UI} frontend requests further service information from the \ac{GSS}. It responses with \acp{URL} to the database and the \ac{AUTH}.
-\item The \ac{UI} frontend connects to the \ac{AUTH} using the authentication information provided by the user.
-\item If the \ac{AUTH} replies with a positive authentication, the \ac{UI} frontend connects to the database and lists the projects.
-\item Once a project is opened or created, the \ac{UI} frontend requests a new session from the \ac{GSS}. The \ac{GSS} replies with the connection \acp{URL} from the \ac{LSS}. The \ac{LSS} has been registered to the \ac{GSS} during its initialization.
-\item The \ac{UI} frontend then connects to the \ac{LSS} and requests a new session. As a result, the \ac{LSS} spawns new application service processes and replies with the respective service \acp{URL}.
-\item From now on, the \ac{UI} frontend communicates with the application services.
-\end{enumerate}
-The whole process of the \ac{LSS} registration and connection of the \ac{UI} frontend to the compute services is depicted in \autoref{fig:ot-network-communication}.
+As shown in \autoref{fig:ot-network-communication-diagram}, the services can be separated by their network space. Not all services require a public available network address.
+While \ac{GSS}, \ac{AUTH} and database are globally accessible via a fixed network address, the \ac{LSS} can theoretically run on a dedicated host and is only communicated to other parties after it has registered itself to the \ac{GSS}. The services, spawned by \ac{LSS} do not require a public address space either. All communication between the \ac{UI} front end and the compute services is achieved via a relay service and a web socket communication channel.
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.98\textwidth]{Figures/opentwin-network-communication.pdf}
-	\caption{Service initialization of OpenTwin processes. (Ping messages are omitted.)}
-	\label{fig:ot-network-communication}
+	\includegraphics[width=0.7\textwidth]{Figures/opentwin-network-communication-diagram.pdf}
+	\caption{Communication overview and service organization for \ac{OT} main services. In 1.1 the \ac{LSS} registers at \ac{GSS}. As soon as the \ac{UI} front end connects to the \ac{GSS}~(2.1), service information is exchanged~(2.2) and the user is authenticated~(2.3). As a consequence, the \ac{GSS} creates a new session and tells the \ac{LSS} to spawn new compute services. From now on the \ac{UI} front end communicates directly with the Compute services via the Relay Service over a web socket connection.}
+	\label{fig:ot-network-communication-diagram}
 \end{figure}
 
-The traffic between services is encrypted using \ac{mTLS} technology. While regular \ac{TLS} ensures the authenticity of the server by using Certificates and the chain of trust, it does not verify the identity of the client. This is the benefit of \ac{mTLS}. In \ac{mTLS}, both sides, client and server has to verify their identity by providing a certificate inherited from a common root certificate.
+
+The whole process of the \ac{LSS} registration and connection of the \ac{UI} front end to the compute services is depicted in \autoref{fig:ot-network-communication-sequence}.
+Once started, the user can login. In order to connect to the database, the following steps are performed:
+\begin{enumerate}
+\item The \ac{UI} front end requests further service information from the publicly available \ac{GSS}. The address for this service is provided by the user. The \ac{GSS} responses with \acp{URL} to the database and the \ac{AUTH}.
+\item The \ac{UI} front end connects to the \ac{AUTH} using the authentication information provided by the user.
+\item If the \ac{AUTH} replies with a positive authentication, the \ac{UI} front end connects to the database and lists the projects.
+\item Once a project is opened or created, the \ac{UI} front end requests a new session from the \ac{GSS}. The \ac{GSS} replies with the connection \acp{URL} from the \ac{LSS}. The \ac{LSS} has been registered to the \ac{GSS} during its initialization.
+\item The \ac{UI} front end then connects to the \ac{LSS} and requests a new session. As a result, the \ac{LSS} spawns new application service processes and replies with the respective service \acp{URL}.
+\item From now on, the \ac{UI} front end communicates with the application services via the Relay service over a web socket.
+\end{enumerate}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.98\textwidth]{Figures/opentwin-network-communication-sequence.pdf}
+	\caption{Service initialization of \ac{OT} processes. In the beginning, the main services \ac{GSS}, \ac{AUTH} and an optional \ac{LSS} are initialized. While the \ac{GSS} checks the reachability of \ac{AUTH}, the \ac{LSS} registers itself at the \ac{GSS}. After starting the \ac{UI} front end, the service information is requested from a \ac{GSS} and the user is authenticated. After success, the \ac{UI} front end connects to the \ac{LSS} and requests a new session. As consequence, the \ac{LSS} spawns the compute services and connects them to the \ac{UI} front end via a Relay Service. (Ping messages are omitted.)}
+	\label{fig:ot-network-communication-sequence}
+\end{figure}
+
+The traffic between services is encrypted using \ac{mTLS} technology. While regular \ac{TLS} ensures the authenticity of the server by using Certificates and the chain of trust, it does not verify the identity of the client. This is the benefit of \ac{mTLS}. In \ac{mTLS}, both sides, client and server has to verify their identity by providing a certificate inherited from a common root authority.
 
 \section{Problem statement}
 Even though, the application is clearly based on a microservice architecture and it is able to run on a distributed system, it is not designed for a automated cluster yet. It consists of multiple processes where many of them have to run on the same system and need a full working operating system as baseline. Containerization of the system has never been tested and needs to be introduced. 
@@ -93,7 +108,7 @@ First, the cluster engine needs to be set up for \ac{Windows} compute nodes to a
 Next, the application needs to run inside containers. Therefore, container images must be created and provided for the cluster engine. 
 Additionally, the automatic extension of services requires communication between the cluster orchestration management and the applications running on the nodes. A feature that needs to be introduced later on.
 
-Regarding logging, while the frontend application does, the microservices currently do not produce log files. Instead, only a few sub processes write the information on its standard output stream. In some cases, the error information given by exceptions is dropped.
+Regarding logging, while the front end application does, the microservices currently do not produce log files. Instead, only a few sub processes write the information on its standard output stream. In some cases, the error information given by exceptions is dropped.
 Furthermore, proper exit codes in error cases are not returned. That is, if the application exits there is currently no way to detect if the process terminated normally or crashed as part of an error.
 
 \section{Limitations}
