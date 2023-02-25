@@ -47,29 +47,35 @@ open_twin.exe GlobalSessionService.dll \
   "0" "127.0.0.1:8091" "tls@127.0.0.1:27017" "127.0.0.1:8092"
 \end{lstlisting}
 
+For conveniently running the services with all their necessary arguments, batch files were provided that read environment variables and convert them into runtime arguments for the service executable. Therefore, if the services are started locally, the user runs a batch file that sets up the environment for the network binding details, path to certificates and encrypted database credentials.
+
+The system consists of the following micro services that are permanently accessible: \acf{GSS}, \acf{AUTH} and the database. The database is running on MongoDB\footnote{MongoDB:~https://www.mongodb.com/}. Another Service is the \acf{LSS} that spawns the so called compute services. Those are services for running the actual computation after opening a projet. logging, scripting, 3D modeling, kriging. In total there are XXX compute services, that can dynamically spawn and exit.
+A list of the compute services can be found in Table XXXX.
+Each service runs in its own operating system process.
+% TODO: Table of Services, amount of total Services
+
 \begin{table}[h!]
 	\centering
-	\begin{tabular}{||c c c c||} 
+	\begin{tabular}{||c c||} 
 		\hline
-		Col1 & Col2 & Col2 & Col3 \\ [0.5ex] 
+		Name & Short description \\ [0.5ex] 
 		\hline\hline
-		1 & 6 & 87837 & 787 \\ 
-		2 & 7 & 78 & 5415 \\
-		3 & 545 & 778 & 7507 \\
-		4 & 545 & 18744 & 7560 \\
-		5 & 88 & 788 & 6344 \\ [1ex] 
+		CartesianMeshService & 6 \\ 
+		FITTDService & 7 \\
+		KrigingService & 545 \\ 
+		LoggerService & 545 \\ 
+		ModelingService & 545 \\ 
+		PHREECService & 545 \\ 
+		TetMeshService & 545 \\ 
+		VisualizationService & 545 \\ 
+		UiService & 545 \\ 
+		[1ex] 
 		\hline
 	\end{tabular}
 	\caption{Table to test captions and labels.}
 	\label{tbl:ot-command-args}
 \end{table}
 
-For conveniently running the services with all their necessary arguments, batch files were provided that read environment variables and convert them into runtime arguments for the service executable. Therefore, if the services are started locally, the user runs a batch files that sets up the environment.
-
-The system consists of the following micro services that are permanently accessible: \acf{GSS}, \acf{AUTH} and the database. The database is running on MongoDB\footnote{MongoDB:~https://www.mongodb.com/}. Another Service is the \acf{LSS} that spawns the so called compute services. Those are services for logging, scripting, 3D modeling, kriging. In total there are XXX compute services, that can dynamically spawn and exit.
-A list of all services can be found in Table XXXX.
-Each service runs in its own operating system process.
-% TODO: Table of Services, amount of total Services
 
 As shown in \autoref{fig:ot-network-communication-diagram}, the services can be separated by their network space. Not all services require a public available network address.
 While \ac{GSS}, \ac{AUTH} and database are globally accessible via a fixed network address, the \ac{LSS} can theoretically run on a dedicated host and is only communicated to other parties after it has registered itself to the \ac{GSS}. The services, spawned by \ac{LSS} do not require a public address space either. All communication between the \ac{UI} front end and the compute services is achieved via a relay service and a web socket communication channel.
