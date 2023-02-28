@@ -96,11 +96,26 @@ The \ac{CRI} from the Open Container Initiative (CRI-O)\footnote{CRI-O: https://
 
 At the current time being, container networking with ContainerD is not well-established on \ac{Windows}~\cite{GitHub.20230202,GitHub.20230202b,Github.2022_258,GitHub.20230202c} even though the docker runtime is already removed in current versions of \ac{K8s}~\cite{Kubernetes.2020}. However, these are the only two working container backends for \ac{Windows} containers. Therefore ContainerD as container backend was chosen.
 
-\subsection{Docker Container Runtime Interface}
-The Docker \ac{CRI} (so called "Docker shim") is using the internal mechanisms from Docker to run containers. While it used control group isolation in Linux, it was dedicated Hyper-V virtualization in \ac{Windows}. During its installation on \ac{Windows}, Docker creates a separate Hyper-V virtual machine to run container images. This has the disadvantage of using large resources for containers, even though they are running in one virtual machine. For networking, the internal mechanisms from Docker are used.
-
 \subsection{ContainerD}
-Containerd is a native version of a container runtime. Newer versions of Docker, on Linux, are running Containerd under the hood for process isolation. For the \ac{Windows} operating system, ContainerD support has to be enabled by switching to "\ac{Windows} Containers". This enables slim host process isolation for containers, hosted on \ac{Windows}. Containerd does not come with any mechanisms for networking. In current versions of \ac{K8s}, ContainerD is the only available \ac{CRI} for \ac{Windows} containers.
+Containerd is a native version of a container runtime. Newer versions of Docker on Linux, are running Containerd under the hood for process isolation. On \ac{Windows} ContainerD uses slim host process isolation.  The process isolation with ContainerD consists of multiple abstraction layers (shown in \autoref{fig.containerd-architecture}). The ContainerD back end contacts the containerd-shim which is maintaining an abstraction layer for communication for the underlying layers (depending on Linux and \ac{Windows}). Below that, \ac{Windows} offers a custom fork of the \ac{CLI} \textit{runc}, so called \textit{runhcs}\cite{Scooley.2022}. With \textit{runc} new containers can be created by running a simple command\cite{Scooley.2022}. The layer for \textit{runhcs} connects to the \ac{HCS} which is another abstraction layer of \ac{Windows} for providing a stable \ac{API} to the low level functionality of the operating system\cite{Microsoft.2017}.
+
+Containerd does not come with any mechanisms for networking. Instead, this is in responsibility of the \ac{HCS}. In current versions of \ac{K8s}, ContainerD is the only available \ac{CRI} for \ac{Windows} containers.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.38\textwidth]{Figures/containerd-architecture.pdf}
+	\caption{Abstraction layers for ContainerD on Windows. The image shows the technology stack from the Docker and \ac{K8s} command line to the Container layer.\cite{Scooley.2022}}
+	\label{fig.containerd-architecture}
+\end{figure}
+
+
+\subsection{Docker Container Runtime Interface}
+The Docker \ac{CRI} (so called "Docker shim") is using the internal mechanisms from Docker to run containers. Older versions in Linux were using control group isolation.
+
+For \ac{Windows}, there are two different modes available. The first option is using the process isolation mode offered by ContainerD. It can be enabled by switching to "\ac{Windows} Containers". It is the default mode for Windows Server systems. However, older versions of Docker and Docker on Windows 10 and above has the opposite behavior\cite{RamosApolinario.2021}. On client versions of Windows, a dedicated hypervisor-isolated virtualization is the default option\cite{RamosApolinario.2021}. This means, during the installation of Docker on \ac{Windows}, the underlying Windows container host creates a separate Hyper-V \ac{VM} to run container images. However, this is not a regular Hyper-V \ac{VM}. Instead, it is a purpose-built \ac{VM}, often referred to as utility \ac{VM} or UVM that can't be managed directly and is fully controlled by the \ac{Windows} container runtime\cite{RamosApolinario.2021}. For networking, the internal mechanisms from Docker are used. All running containers are deployed inside the dedicated Hyper-V \ac{VM}. Therefore, this is a mixture of process isolation and full isolation using virtualization.
+
+However, the hypervisor approach still has the disadvantage of using large resources for containers, even though they are running in one virtual machine. In addition, containers running in hypervisor isolation take longer to start up than those running in process isolation\cite{RamosApolinario.2021}.
+
 
 
 

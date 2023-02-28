@@ -49,31 +49,30 @@ open_twin.exe GlobalSessionService.dll \
 
 For conveniently running the services with all their necessary arguments, batch files were provided that read environment variables and convert them into runtime arguments for the service executable. Therefore, if the services are started locally, the user runs a batch file that sets up the environment for the network binding details, path to certificates and encrypted database credentials.
 
-The system consists of the following micro services that are permanently accessible: \acf{GSS}, \acf{AUTH} and the database. The database is running on MongoDB\footnote{MongoDB:~https://www.mongodb.com/}. Another Service is the \acf{LSS} that spawns the so called compute services. Those are services for running the actual computation after opening a projet. logging, scripting, 3D modeling, kriging. In total there are XXX compute services, that can dynamically spawn and exit.
-A list of the compute services can be found in Table XXXX.
+The system consists of the following micro services that are permanently accessible: \acf{GSS}, \acf{AUTH} and the database. The database is running on MongoDB\footnote{MongoDB:~https://www.mongodb.com/}. Another Service is the \acf{LSS} that spawns the so called compute services. Those are services for running the actual computation after opening a project that can dynamically spawn and exit. A list of compute services and their corresponding tasks can be found in \autoref{tbl:ot-compute-services}.
 Each service runs in its own operating system process.
 % TODO: Table of Services, amount of total Services
 
 \begin{table}[h!]
 	\centering
-	\begin{tabular}{||c c||} 
+	\begin{tabular}{|l | p{.65\textwidth}|} 
 		\hline
-		Name & Short description \\ [0.5ex] 
-		\hline\hline
-		CartesianMeshService & 6 \\ 
-		FITTDService & 7 \\
-		KrigingService & 545 \\ 
-		LoggerService & 545 \\ 
-		ModelingService & 545 \\ 
-		PHREECService & 545 \\ 
-		TetMeshService & 545 \\ 
-		VisualizationService & 545 \\ 
-		UiService & 545 \\ 
+		Name & Task  \rule{-5pt}{2.6ex} \\
+		\hline \rule{-3pt}{3ex}
+		CartesianMeshService & If demanded, it converts a continuous geometry into a discrete Cartesian mesh. \\
+		FITTDService & If demanded, it runs a solver algorithm for fitting and simulation.\\
+		KrigingService & If demanded, it runs a kriging interpolation of curves on geometry. \\ 
+		LoggerService & A background service, that accepts logging messages from other services. \\ 
+		ModelingService & Performs calculations for the creation, modeling and arithmetic combination of geometric data. \\ 
+		PHREECService & If demanded, it runs flow simulation with the help of PHREEC. \\ 
+		TetMeshService & If demanded, it meshes a form with an tetrahedral mesh.  \\ 
+		VisualizationService & Runs the graphical calculations for displaying the resulting geometric data on the \ac{UI}.\\ 
+		UiService & Creates and renders the \ac{UI} elements and sends them towards the \ac{UI} front end. \\ 
 		[1ex] 
 		\hline
 	\end{tabular}
-	\caption{Table to test captions and labels.}
-	\label{tbl:ot-command-args}
+	\caption{List of compute services and their corresponding tasks.}
+	\label{tbl:ot-compute-services}
 \end{table}
 
 
