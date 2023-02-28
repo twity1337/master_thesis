@@ -8,10 +8,10 @@
 The development of the \ac{K8s} cluster and the containerization of \ac{OT} hides several pitfalls. These are discussed in this chapter.
 
 \section{Containerization}
-During the containerization of the application, the issues that require consideration are discussed in this section.
+The issues that require consideration during the containerization of the application are discussed in this section.
 
 \subsection{Container manifest}
-Even though the format of the container manifests "Containerfile" is compatible to the proprieteary "Dockerfile" format from Docker, the \acp{CRI} do not follow the specification everywhere\cite. This is an issue while writing a Containerfile for the ContainerD \ac{CRI}. Especially in cases where line breaks in the Containerfile might be necessary to shorten long lines and increase readability. ContainerD is treating line breaks paths in string notation different compared to paths in JSON array notation and is not following the specification\cite{ManKier.20230222}.
+Even though the format of the container manifests "Containerfile" is compatible to the proprietary "Dockerfile" format from Docker, the \acp{CRI} do not follow the specification everywhere\cite. This is an issue while writing a Containerfile for the ContainerD \ac{CRI}. Especially in cases where line breaks in the Containerfile might be necessary to shorten long lines and increase readability. ContainerD is treating line breaks paths in string notation different compared to paths in JSON array notation and is not following the specification\cite{ManKier.20230222}.
 \begin{lstlisting}[caption={Containerfile entrypoint specification across multiple lines in text format.}, label=lst:results.containerfile-entrypoint.text]
 ENTRYPOINT open_twin.exe \
 Service.dll
