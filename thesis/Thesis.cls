@@ -437,7 +437,5 @@
   \else
     \clearpage
   \fi
-  \addtotoc{\bibname}
-  \btypeout{\bibname}
   \@mainmatterfalse}
 \endinput

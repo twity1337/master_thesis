@@ -31,6 +31,7 @@
 \graphicspath{{Pictures/}} % Specifies the directory where pictures are stored
 
 \usepackage{comment}
+\usepackage{multirow}
 
 \usepackage[square, numbers, comma, sort&compress]{natbib} % Use the natbib reference package - read up on this to edit the reference style; if you want text (e.g. Smith et al., 2012) for the in-text references (instead of numbers), remove 'numbers' 
 \hypersetup{urlcolor=blue, colorlinks=true} % Colors hyperlinks in blue - change to black if annoying
@@ -278,7 +279,7 @@ The acknowledgements and the people to thank go here, don't forget to include yo
 % Include the appendices of the thesis as separate files from the Appendices folder
 % Uncomment the lines as you write the Appendices
 
-\input{Appendices/AppendixA}
+\input{Appendices/ACodeRepo}
 %\input{Appendices/AppendixB}
 %\input{Appendices/AppendixC}
 
@@ -291,17 +292,21 @@ The acknowledgements and the people to thank go here, don't forget to include yo
 %	ACRONYMS
 %----------------------------------------------------------------------------------------
 
+\chapter{Acronyms}
 \label{acronyms}
 \lhead{\emph{Acronyms}}
 \input{acronyms.tex}
+\pagebreak
 
 %----------------------------------------------------------------------------------------
 %	BIBLIOGRAPHY
 %----------------------------------------------------------------------------------------
 
+\addtotoc{\bibname}
+\btypeout{\bibname}
 \label{Bibliography}
 
-\lhead{\emph{Bibliography}} % Change the page header to say "Bibliography"
+\lhead{\emph{\bibname}} % Change the page header to say "Bibliography"
 
 \bibliographystyle{unsrtnat} % Use the "unsrtnat" BibTeX style for formatting the Bibliography
 

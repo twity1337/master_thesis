@@ -1,0 +1,41 @@
+% Appendix A
+
+\chapter{Overview about submitted code} % Main appendix title
+
+\label{chap:appdx.CodeRepo} % For referencing this appendix elsewhere, use \ref{AppendixA}
+
+\lhead{Appendix A. \emph{Overview about submitted code}} % This is for the header on each page - perhaps a shortened title
+
+The created code and configuration file was uploaded to the project GitHub repository. The repository has private access only. Access to the repository can be granted by request.
+
+The GitHub repository is located at: \href{https://github.com/pth68/SimulationPlatform}{https://github.com/pth68/SimulationPlatform}
+
+The location of the additional files that are relevant for creation of the cluster are located in the \mbox{\textbf{"Distribution"}} sub directory of the repository. 
+\autoref{tbl:appdx.coderepo} describes the submitted files (relative from the "Distribution" directory) and their intention.
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|l |l | p{.4\textwidth}|} 
+		\hline
+		\bfseries Path & \bfseries Filename & \bfseries Intention  \rule{-5pt}{2.6ex} \\
+		\hline \rule{-3pt}{3ex}
+		\multirow{15}{*}{Container/} & build-image.ps1 & Automation script for building, saving, and re-importing container images for ContainerD. \\
+		& setup-node.ps1 & Script for automated installation of Kubernetes node prerequisites and setup by treating the flaws of a manual installation. \\
+		& authorisation.Containerfile & Containerfile for OpenTwin's Authorisation service. \\ 
+		& globalsession.Containerfile & Containerfile for OpenTwin's global session service. \\ 
+		& mongodb.Containerfile & Containerfile for the containerized MongoDB server. \\ 
+		& session.Containerfile & Containerfile for OpenTwin's local session service. \\ 
+		& compose.yaml & A container compose file for testing the setup of containerized services.  \\ 
+		\hline
+		\multirow{5}{*}{Container/mongodb/} & 0-init.js & A initialization script for setting up the admin user and roles of the OpenTwin database.\\ 
+		& mongodb.conf & The MongoDB Server configuration file. \\ 
+		\hline
+		\multirow{5}{*}{Controlplane/} & kubeadm\_config.yaml & The configuration which should be passed during initialization of the cluster using kubeadm. \\ 
+		& open\_twin.yaml & The \ac{K8s} configuration file for deploying the cluster. \\ 
+		\hline
+		\multirow{2}{*}{Kubernetes/} & open\_twin.yaml & The Kubernetes configuration file for deploying the cluster. \\
+		\hline
+	\end{tabular}
+	\caption{List of files in the code repository and their usage description.}
+	\label{tbl:appdx.coderepo}
+\end{table}
