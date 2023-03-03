@@ -35,9 +35,9 @@ Since \ac{K8s} is the chosen orchestration engine, the following sections are ta
 \subsection{Entities}
 There are many entities for objects inside the cluster. For description of those entities the configuration language YAML is used. Some of the most widely used entities are described in the following paragraphs.
 
+\paragraph*{Pod} A pod represents a set of running containers on a node. Each pod has additional information stored, such as Health state, the cluster internal network \ac{IP} address or the amoun of replications.
 \paragraph*{Deployment}
 Deployments are used to define declarative states for Pods. This allows to maintain consecutive versions of the pod and upgrade them during runtime.
-\paragraph*{Pod} A pod represents a set of running containers on a node. Each pod has additional information stored, such as Health state, the cluster internal network \ac{IP} address or the amoun of replications.
 \paragraph*{Daemon set} These ensure that multiple (or all) nodes run a certain pod\cite{Kubernetes.20220831}. Common use cases are tasks for all nodes or running the network overlay pod.
 \paragraph*{User} This entity describes a user that  can access the \ac{K8s} cluster and \ac{API} services. Users can be part of a group and permission roles.
 \paragraph*{Node} A node represents a physical machine inside the cluster. Nodes can run multiple pods.
@@ -47,7 +47,7 @@ Deployments are used to define declarative states for Pods. This allows to maint
 \ac{K8s} comes with a set of core services (see \autoref{fig.kubernetes-architecture}) that ensure the life span of scheduled containers, and the application services that offer the actual application.
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.75\textwidth]{Figures/kubernetes-architecture.pdf}
+	\includegraphics[width=.95\textwidth]{Figures/kubernetes-architecture.pdf}
 	\caption{Core and compute services for Kubernetes\cite{Luksa.2018}}
 	\label{fig.kubernetes-architecture}
 \end{figure}
@@ -67,6 +67,36 @@ This is a RESTful web server that serves the Kubernetes \ac{API} via \ac{HTTP}\c
 \paragraph*{Scheduler} The scheduler is responsible for distributing services on the cluster and determining which node to choose during runtime. It reads conditions for scheduling (e.g. hardware resources, operating system, labels) from the \ac{API} server and decides which node matches the configuration\cite{Luksa.2018}.
 
 \paragraph*{Controller manager} While the \ac{API}-Server is responsible for storing data in etcd and announcing changes to the clients, the Controller manager and its parts try to achieve a described target state\cite{Luksa.2018}. The controller manager consists of several controllers for replications, daemon sets, deployments, volumes, and so on.
+
+
+\subsection{Pod life cycle}
+\label{chap:design.life_cycle}
+Similar to the underlying application container, Pods in \ac{K8s} have a ephemeral lifetime\cite{Kubernetes.20230217}. After creation on the cluster, a unique identifier is assigned before a pod gets scheduled to an available node\cite{Kubernetes.20230217}. The pod keeps alive until its termination or deletion\cite{Kubernetes.20230217}.
+For distinguishing different kind of states of a pod life cycle, \ac{K8s} defines the pod states as described in \autoref{tbl:k8s-pod-states}.
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|l | p{.65\textwidth}|} 
+		\hline
+		\bfseries State & \bfseries Description  \rule{-5pt}{2.6ex} \\
+		\hline \rule{-3pt}{3ex}
+		Pending & The pod has been set up, the container and pod is currently initialized. \\
+		\hline
+		Running & The pod is bound to a node, the container is running. \\
+		\hline
+		Succeeded & The container terminated with a zero exit code. \\ 
+		\hline
+		Failed & The container terminated with a non-zero exit code or was terminated by the system. \\ 
+		\hline
+		Unknown & The pod state could not be obtained. \\ 
+		[1ex] 
+		\hline
+	\end{tabular}
+	\caption{List of \ac{K8s} states during pod life cycle\cite{Kubernetes.20230217}.}
+	\label{tbl:k8s-pod-states}
+\end{table}
+
+A terminated pod automatically gets restarted based on a configured restart policy. As the \ac{K8s} documentation states, "the kubelet restarts them [the containers of a pod] with an exponential back-off delay (10s, 20s, 40s, …), that is capped at five minutes"\cite{Kubernetes.20230217}. Furthermore, it is explained that the back-off time gets reset, once a container keeps running for 10 minutes\cite{Kubernetes.20230217}.
 
 
 \subsection{Cluster networking}

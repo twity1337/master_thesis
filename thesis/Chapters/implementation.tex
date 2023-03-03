@@ -8,12 +8,33 @@
 % \end{lstlisting}
 
 \section{Containerization of Services}
-Container images are provided for running the application inside the \ac{CRI}. Definition of the container manifest is done in the "Containerfile"\footnote{https://www.mankier.com/5/Containerfile} format is used.
-- Build has to be done inside the container. / All binary files are part of the container image.
+Container images are provided for running the application inside the \ac{CRI}. Definition of the container manifest is done in the "Containerfile"\footnote{Containerfile: https://www.mankier.com/5/Containerfile} format.
 
-% For containerizing the OpenTwin application, several changes were applied to the code base.
+% TODO: ENTWEDER-ODER: Build has to be done inside the container. / All binary files are part of the container image.
 
-% Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host os.
+\subsection{Code changes on core application}
+For containerizing the \ac{OT} application, several changes were applied to its code base. This improves error handling and error tracing of the application and therefore simplifies development of the cluster. In the following sections, the several code changes are described in detail.
+
+\subsubsection*{Introduction of exit codes}
+The microservice \ac{DLL} files have return codes for different error cases. However, the main executable "open\_twin.exe" did not convert these codes into proper process exit codes. 
+Exit-Codes are a crucial part of the \ac{K8s}'s life cycle management as described in \autoref{chap:design.life_cycle}.
+ This was changed in the main excutable.
+ 
+\subsubsection*{Debug verbosity in launcher}
+- Verbosity flag in Launcher, otherwise error messages cannot be seen
+
+
+- Logging enhancement: Added more log lines throughout the application, enabled logging on stdout
+- Catch exceptions instead of ignoring them (Authorization, Session, Globalsession); enhanced databse error handling, formatting issues
+- Bugfix for OpenGL error in uiFrontend
+- Certificate template was extended by localhost/127.0.0.1
+- OpenTwin excutable (rust server) listens on all interface (because of Docker); Port parsing
+
+
+\subsection{Container definition}
+
+
+% Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host operating system.
 % Deployment-Verzeichnis muss dafür initial auf Node kopiert werden.
 % TODO: (Skript ("setup-node") dafür schreiben, was neusten release von github zieht (RUN download?) und image autom. baut + image pusht?)  - base image (FROM) mittels args dynamisch gestalten?
 % dabei beachten, dass Klammern gesetzt werden (Json-Style) bei Entrypoint, da sonst zwar der Build bei docker funktioniert, aber das Image nicht in containerd läuft.

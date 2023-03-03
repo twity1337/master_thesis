@@ -16,7 +16,7 @@ Even though the format of the container manifests "Containerfile" is compatible 
 ENTRYPOINT open_twin.exe \
 Service.dll
 \end{lstlisting}
-\autoref{lst:results.containerfile-entrypoint.text} shows an example of the problem. While the entry point in Docker is interpreted as \textit{open\_twin.exe Service.dll}, the interpreter in ContainerD only reads the first line as entry point and ignores the line break character "\" as in \textit{open\_twin.exe}. To overcome this flaw, the \textit{ENTRYPOINT} definition has to be written in JSON notation. If defined as in \autoref{lst:results.containerfile-entrypoint.json} the interpreter 
+\autoref{lst:results.containerfile-entrypoint.text} shows an example of the problem. While the entry point in Docker is interpreted as \textit{open\_twin.exe Service.dll}, the interpreter in ContainerD only reads the first line as entry point and ignores the line break character "\" as in \textit{open\_twin.exe}. This causes troubles during build and execution of a container image. The container image is built in Docker, whereas it does not run in ContainerD. To overcome this flaw, the \textit{ENTRYPOINT} definition has to be written in JSON notation. If defined as in \autoref{lst:results.containerfile-entrypoint.json} the interpreter 
 \begin{lstlisting}[caption={Containerfile entrypoint specification across multiple lines in JSON format.}, label=lst:results.containerfile-entrypoint.json]
 ENTRYPOINT ["open_twin.exe", 
 "Service.dll"]
