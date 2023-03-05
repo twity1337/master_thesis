@@ -186,7 +186,7 @@
 %	defined as \examname above so you cite it as \examname
 %----------------------------------------------------------------------------------------
 \usepackage{fontspec}
-\usepackage{libertine}
+\usepackage[ttscale=.85]{libertine}
 \uccode`ß="1E9E
 \thesistitle{Containerized multi-level deployment for a distributed adaptive microservice application} % Your thesis title - this is used in the title and abstract
 %-------------------------------------------------  

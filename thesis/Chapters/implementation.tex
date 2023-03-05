@@ -16,11 +16,45 @@ Container images are provided for running the application inside the \ac{CRI}. D
 For containerizing the \ac{OT} application, several changes were applied to its code base. This improves error handling and error tracing of the application and therefore simplifies development of the cluster. In the following sections, the several code changes are described in detail.
 
 \subsubsection*{Introduction of exit codes}
-The microservice \ac{DLL} files have return codes for different error cases. However, the main executable "open\_twin.exe" did not convert these codes into proper process exit codes. 
+The microservice \ac{DLL} files have return codes for different error cases. This is, for instance a code 200 in the \ac{AUTH} for connection issues to the database. As with process exit codes, a zero return code indicates a successful termination. Even though the main executable "open\_twin.exe" retrieves the return code, it did not convert these codes into proper process exit codes. 
 Exit-Codes are a crucial part of the \ac{K8s}'s life cycle management as described in \autoref{chap:design.life_cycle}.
- This was changed in the main excutable.
+
+The surrounding lines of code in the main executable are shown in \autoref{lst:code_changes.exitcodes.before}.
+\begin{lstlisting}[label=lst:code_changes.exitcodes.before, caption={Former code snippet from main executable for calling the microservice library code in Rust (/Microservices/OpenTwin/src/main.rs)}, language=rust, firstnumber=85]
+let _result = initialize(siteid_c_str.as_ptr(), service_c_str.as_ptr(), db_c_str.as_ptr(), dir_c_str.as_ptr());
+\end{lstlisting}
+
+A new condition for non-zero exit codes was added as shown in \autoref{lst:code_changes.exitcodes.after}. The variable \texttt{\_result}  contains the returned exit code of the library \ac{DLL}, whereas \texttt{lib\_path} contains the path to the library \ac{DLL}. As can be seen, it is used to describe the affected service name in a error message.
+\begin{lstlisting}[label=lst:code_changes.exitcodes.after, caption={Code changes in Rust main executable for additional treatment of exit codes (/Microservices/OpenTwin/src/main.rs)}, language=rust, firstnumber=86]
+if _result != 0 {
+  eprintln!("Library/Service initialization ({}:init()) failed with exit code {}", lib_path, _result);
+  std::process::exit(_result);
+}
+\end{lstlisting}
+
  
 \subsubsection*{Debug verbosity in launcher}
+By default Rust programs show a window for console output no matter if it was built in release mode or with debug parameters. However, the main executable uses conditional compilation to set configuration attributes about the windows subsystem.
+Rust provides a compilation option "debug\_assertions" that is set to "true" for compilations without code optimization\cite{Rust.20230209}. Therefore it is set to "true" if the application runs in debug mode.
+As shown in \autoref{lst:cond_compilation_windows_subsystem} with conditional compilation, this build option is checked and console output is only shown for debug builds.
+
+\begin{lstlisting}[label=lst:cond_compilation_windows_subsystem, caption={Conditional compilation for disabling console output in non-debug builds (/Microservices/OpenTwin/src/main.rs)}, language=rust, firstnumber=2]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+\end{lstlisting}
+
+Even if output is shown on the console window for debug builds only, the error messages are not able to be read conveniently in cases where the application crashes. To avoid this behavior, the launcher batch files were adapted. For this, a new parameter was invented to the batch file for running the batch file in verbose mode.
+% (Helpful for debugging and development of cluster, schon oben erwähnt)
+
+\begin{lstlisting}[label=lst:launcher_extension.parameter_validation.after, caption={Additional command exntension for preventing close of window after termination (/Microservices/Launcher/OpenTwin\_session.bat)}, language=cmd, firstnumber=2]
+IF "%~1"=="/V" (
+  REM OT is opening console windows in debug build, so we want to pause them at the end
+  SET pause_prefix=cmd.exe /S /C "
+  SET pause_suffix=" ^& pause
+  ECHO ON
+)
+\end{lstlisting}
+
+
 - Verbosity flag in Launcher, otherwise error messages cannot be seen
 
 
