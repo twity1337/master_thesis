@@ -40,6 +40,21 @@
 
 % ---------- LANGUAGE DEFINITIONS ----------
 \usepackage{custom-lstlisting-definitions}
+\let\origthelstnumber\thelstnumber
+\makeatletter
+\newcommand*\Suppressnumber{%
+	\lst@AddToHook{OnNewLine}{%
+		\let\thelstnumber\relax%
+		\advance\c@lstnumber-\@ne\relax%
+	}%
+}
+
+\newcommand*\Reactivatenumber{%
+	\lst@AddToHook{OnNewLine}{%
+		\let\thelstnumber\origthelstnumber%
+		\advance\c@lstnumber\@ne\relax}%
+}
+\makeatother
 \lstset{
 	escapeinside={<*@}{@*>},
 	breaklines=true,

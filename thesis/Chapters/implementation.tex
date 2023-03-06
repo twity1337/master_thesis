@@ -24,7 +24,7 @@ The surrounding lines of code in the main executable are shown in \autoref{lst:c
 let _result = initialize(siteid_c_str.as_ptr(), service_c_str.as_ptr(), db_c_str.as_ptr(), dir_c_str.as_ptr());
 \end{lstlisting}
 
-A new condition for non-zero exit codes was added as shown in \autoref{lst:code_changes.exitcodes.after}. The variable \texttt{\_result}  contains the returned exit code of the library \ac{DLL}, whereas \texttt{lib\_path} contains the path to the library \ac{DLL}. As can be seen, it is used to describe the affected service name in a error message.
+A new condition for non-zero exit codes was added as shown in \autoref{lst:code_changes.exitcodes.after}. The variable \texttt{\_result}  contains the returned exit code of the library \ac{DLL}, whereas \texttt{lib\_path} contains the path to the library \ac{DLL}. As can be seen, it is used to describe the affected service name in a error message (line 87).
 \begin{lstlisting}[label=lst:code_changes.exitcodes.after, caption={Code changes in Rust main executable for additional treatment of exit codes (/Microservices/OpenTwin/src/main.rs)}, language=rust, firstnumber=86]
 if _result != 0 {
   eprintln!("Library/Service initialization ({}:init()) failed with exit code {}", lib_path, _result);
@@ -35,17 +35,15 @@ if _result != 0 {
  
 \subsubsection*{Debug verbosity in launcher}
 By default Rust programs show a window for console output no matter if it was built in release mode or with debug parameters. However, the main executable uses conditional compilation to set configuration attributes about the windows subsystem.
-Rust provides a compilation option "debug\_assertions" that is set to "true" for compilations without code optimization\cite{Rust.20230209}. Therefore it is set to "true" if the application runs in debug mode.
-As shown in \autoref{lst:cond_compilation_windows_subsystem} with conditional compilation, this build option is checked and console output is only shown for debug builds.
-
+Rust provides a compilation option "debug\_assertions" that is set to "true" for compilations without code optimization\cite{Rust.20230209}. Therefore it is set to "true" if the application runs in debug mode. As shown in \autoref{lst:cond_compilation_windows_subsystem} with conditional compilation, this build option is checked and console output is only shown for debug builds.
 \begin{lstlisting}[label=lst:cond_compilation_windows_subsystem, caption={Conditional compilation for disabling console output in non-debug builds (/Microservices/OpenTwin/src/main.rs)}, language=rust, firstnumber=2]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 \end{lstlisting}
 
-Even if output is shown on the console window for debug builds only, the error messages are not able to be read conveniently in cases where the application crashes. To avoid this behavior, the launcher batch files were adapted. For this, a new parameter was invented to the batch file for running the batch file in verbose mode.
-% (Helpful for debugging and development of cluster, schon oben erwähnt)
+Even if output is shown on the console window for debug builds only, the error messages are not able to be read conveniently in cases where the application crashes. This aggravates debugging of regular application errors outside of a containerized environment.
+To avoid this behavior, the launcher batch files were adapted. For this, a new parameter was invented to the batch file for running the batch file in verbose mode.
 
-\begin{lstlisting}[label=lst:launcher_extension.parameter_validation.after, caption={Additional command exntension for preventing close of window after termination (/Microservices/Launcher/OpenTwin\_session.bat)}, language=cmd, firstnumber=2]
+\begin{lstlisting}[label=lst:launcher_extension.parameter_validation.after, caption={Additional command argument for preventing close of window after termination (/Microservices/Launcher/OpenTwin\_session.bat)}, language=cmd, firstnumber=18]
 IF "%~1"=="/V" (
   REM OT is opening console windows in debug build, so we want to pause them at the end
   SET pause_prefix=cmd.exe /S /C "
@@ -53,17 +51,29 @@ IF "%~1"=="/V" (
   ECHO ON
 )
 \end{lstlisting}
+As first step, a new command line argument has been introduced. If "/V" is appended to the start of the launcher batch file it will run with higher verbosity.  As can be seen in \autoref{lst:launcher_extension.parameter_validation.after}, with "/V" appended, two new variables "pause\_prefix" and "pause\_suffix" are set (line 20-21). Furthermore, command output is enabled to debug the launcher file itself (line 22).
+
+\begin{lstlisting}[label=lst:launcher_extension.call.after, caption={Additional command extension for preventing close of window after termination (/Microservices/Launcher/OpenTwin\_session.bat)}, language=cmd, firstnumber=34]
+START "AUTHORIZATION SERVICE" %pause_prefix%open_twin.exe AuthorisationService.dll <*@ \Suppressnumber @*>
+ "%OPEN_TWIN_SERVICES_ADDRESS%:%OPEN_TWIN_AUTH_PORT%" "%OPEN_TWIN_MONGODB_ADDRESS%"
+ "%OPEN_TWIN_MONGODB_PWD%"%pause_suffix%
+\end{lstlisting}
+As can be seen in \autoref{lst:launcher_extension.call.after}, the newly defined variables "pause\_prefix" and "pause\_suffix" are appended to the command of starting a service. This ensures that a service process is started in a new window and the command is followed by the \ac{Windows} "pause" command to stop and wait for user interaction.
 
 
-- Verbosity flag in Launcher, otherwise error messages cannot be seen
+\subsubsection*{Enhanced logging and error tracing}
+For improving the error tracing, the overall log amount has been increased. This involves enabling the logging of the central logging functions inside the library "OpenTwinCommunication". The logging mechanism did not use logging to standard output. Instead, calling the respective functions for logs were just ignored. This was changed and logging to standard output has been introduced.
+Additionally, more calls to the logging mechanism, including caller information, have been added. For instance, the \ac{AUTH} now shows error messages for caught exceptions and errors during database initialization.
+Also, the general error tracing has been improved. In the main services \ac{GSS}, \ac{LSS} and \ac{AUTH}, exception handling has been added, where it was not present before. Furthermore, the formatting of exception messages was improved and more information has been added.
 
+For the current time being, there is an ongoing work to replace the logging to standard output by forwarding the log lines to a central logging library.
 
-- Logging enhancement: Added more log lines throughout the application, enabled logging on stdout
-- Catch exceptions instead of ignoring them (Authorization, Session, Globalsession); enhanced databse error handling, formatting issues
-- Bugfix for OpenGL error in uiFrontend
+\subsubsection*{Certificate changes}
 - Certificate template was extended by localhost/127.0.0.1
-- OpenTwin excutable (rust server) listens on all interface (because of Docker); Port parsing
 
+
+- OpenTwin excutable (rust server) listens on all interface (because of Docker); Port parsing
+- Bugfix for OpenGL error in uiFrontend
 
 \subsection{Container definition}
 
