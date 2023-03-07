@@ -99,7 +99,7 @@ Once started, the user can login. In order to connect to the database, the follo
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.98\textwidth]{Figures/opentwin-network-communication-sequence.pdf}
-	\caption{Service initialization of \ac{OT} processes. In the beginning, the main services \ac{GSS}, \ac{AUTH} and an optional \ac{LSS} are initialized. While the \ac{GSS} checks the reachability of \ac{AUTH}, the \ac{LSS} registers itself at the \ac{GSS}. After starting the \ac{UI} front end, the service information is requested from a \ac{GSS} and the user is authenticated. After success, the \ac{UI} front end connects to the \ac{LSS} and requests a new session. As consequence, the \ac{LSS} spawns the compute services and connects them to the \ac{UI} front end via a Relay Service. (Ping messages are omitted.)}
+	\caption{Service initialization of \ac{OT} processes. In the beginning, the main services \ac{GSS}, \ac{AUTH} and an optional \ac{LSS} are initialized. While the \ac{GSS} checks the reachability of \ac{AUTH}, the \ac{LSS} registers itself at the \ac{GSS}. After starting the \ac{UI} front end, the service information is requested from a \ac{GSS} and the user is authenticated. Afterwards, the project list for the authenticated user is displayed. After opening a project, the \ac{UI} front end connects to the \ac{LSS} and requests a new session. As consequence, the \ac{LSS} spawns the compute services and connects them to the \ac{UI} front end via a Relay Service. (Ping messages are omitted.)}
 	\label{fig:ot-network-communication-sequence}
 \end{figure}
 
@@ -108,11 +108,64 @@ The traffic between services is encrypted using \ac{mTLS} technology. While regu
 % TODO: Section about "Containerization and/vs VM"
 % TODO: Section about "Container & Container image"
 
-% TODO: Section about "Certificate" & "SSL/TLS/mTLS"
+
+\section{Network traffic encryption}
+Each service of \ac{OT} offers two different channels for secure communication between services. One channel supports traditional one-way \ac{TLS}, while the other uses bidirectional \ac{mTLS}. The one-way \ac{TLS} channel is mostly used for checking the general health state of a service, while the two-way \ac{mTLS} is used for relevant application based communication.
+In this section both encryption methods are briefly presented.
+
+\subsection{Transport Layer Security}
+\ac{TLS} is an cryptography extension mainly designed for providing security over \ac{HTTP}. The main goals of cryptography are confidentiality, integrity and authenticity between two communicating parties. This means, the communication on a network is kept secret between the two endpoints (Confidentiality), messages are not subject of manipulation (Integrity), and message exchanges are only allowed between authorized and trusted individuals (Authenticity). \ac{TLS} ensures the three traits by using certificates.
+
+A simplified handshake of the \ac{TLS} protocol is depicted in \autoref{fig:tls-protocol}.
+After sending the certificate from server to the client, the client validates the certificate based on the chain of trust. This means, it checks if the certificate was issued by a trusted root authority (so called \ac{CA}). Only if the authenticity of the server is ensured, the encryption key is exchanged in order to start an encrypted communication.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.55\textwidth]{Figures/tls.pdf}
+	\caption{Simplified visualization of the \ac{TLS} handshake. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message "Hello Done" (4). The client then validates the certificate and compares it against the chain of trust. Afterwards, the key exchange starts (5,6) to ensure an encrypted communication.}
+	\label{fig:tls-protocol}
+\end{figure}
+
+
+\subsection{Mutual authentication}
+The mutual authentication is adding another step to the one-way authentication. The application of it is used in \ac{mTLS}. Instead of just sending the server's certificate to the client, the client also sends a certificate to the server. Therefore, not only the authenticity of the server is ensured, but also of the client.
+
+As can be seen in \autoref{fig:mtls-protocol}, compared to the \ac{TLS} handshake, the \ac{mTLS} handshake involves additional messages 5 and 6 for sending and validating the client's certificate.
+Unlike with the server certificate, the client certificate is not validated against a publicly available root authority. Instead, the server acts as root authority, creates the client certificate and ships it with the application.
+
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.55\textwidth]{Figures/mtls.pdf}
+	\caption{Simplified visualization of the \ac{mTLS} handshake. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message "Hello Done" (4). The client then validates the certificate and compares it against the locally stored root authority. Afterwards, the client sends its certificate to the server (5). The server validates the client certificate against its local root authority and grants access to the service (6). Afterwards, the key exchange starts (7,8) to ensure an encrypted communication.}
+	\label{fig:mtls-protocol}
+\end{figure}
+
+\subsection{Certificate creation}
+For creation of certificates in the application landscape of \ac{OT}, CloudFlare's public key infrastructure toolkit "cfssl"\footnote{cfssl: https://cfssl.org/ or https://github.com/cloudflare/cfssl} is used.
+For generating certificates with the toolkit, it is fed with a JSON file with subject information for the \ac{CSR}.
+
+It contains information about the issuer, as well as the name and cryptography algorithm of the certificate.
+Additionally, the client and server certificate that derive from the root \ac{CA} contain information for whitelisted hosts in their \ac{CSR} JSON file. If a host is not mentioned in the resulting certificate, requests from the corresponding host are rejected.
+\autoref{lst:background.ca-csr} shows such a configuration with accepted host names in the form of a \ac{CSR}.
+
+\begin{lstlisting}[label=lst:background.ca-csr, caption={Example of meta data in form of \ac{CSR} configuration. "CN" is the certificate name. "hosts" describes the accepted hostnames, "key" describes information about the cryptography algorithm, "names" contains meta data of the organization}]
+{
+  "CN": "OpenTwin",
+  "hosts": ["localhost", "127.0.0.1"],
+  "key": {
+    "algo": "rsa",
+    "size": 4096},
+  "names": [{
+    "O": "Frankfurt University of Applied Sciences"
+  }]
+}
+\end{lstlisting}
+
 
 \section{Problem statement}
 Even though, the application is clearly based on a microservice architecture and it is able to run on a distributed system, it is not designed for an automated cluster yet.
-It consists of multiple processes where many of them have to run on the same system and need a full working operating system as baseline.  %% TODO(THOMA): DAS MUSS JA NICHT SEIN - "Have to run on same system."
+It consists of multiple processes where many of them have to run on the same system and need a full working operating system as baseline.  % TODO(THOMA): DAS MUSS JA NICHT SEIN - "Have to run on same system."
 Containerization of the system has never been tested and needs to be introduced. 
 First, the cluster engine needs to be set up for \ac{Windows} compute nodes to allow \ac{Windows} containers to run inside the cluster. Additionally, it needs to have full network capabilities as well as inter connectivity between the several services.
 Next, the application needs to run inside containers. Therefore, container images must be created and provided for the cluster engine. 
