@@ -140,7 +140,7 @@
 \usepackage{rotating}
 \usepackage{listings}
 \usepackage{lstpatch}
-\usepackage{acronym}
+\usepackage[printonlyused,withpage]{acronym}
 
 \lstset{captionpos=b,
         frame=tb,

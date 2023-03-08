@@ -32,6 +32,7 @@
 
 \usepackage{comment}
 \usepackage{multirow}
+\usepackage{multicol}
 
 \usepackage[square, numbers, comma, sort&compress]{natbib} % Use the natbib reference package - read up on this to edit the reference style; if you want text (e.g. Smith et al., 2012) for the in-text references (instead of numbers), remove 'numbers' 
 \hypersetup{urlcolor=blue, colorlinks=true} % Colors hyperlinks in blue - change to black if annoying
@@ -284,6 +285,9 @@ The acknowledgements and the people to thank go here, don't forget to include yo
 
 \pagestyle{fancy} % Return the page headers back to the "fancy" style
 
+\acresetall % reset all usages of acronyms - print long version on the next first usage
+
+
 % Include the chapters of the thesis as separate files from the Chapters folder
 % Uncomment the lines as you write the chapters
 
@@ -320,9 +324,13 @@ The acknowledgements and the people to thank go here, don't forget to include yo
 %----------------------------------------------------------------------------------------
 
 \chapter{Acronyms}
+
+\begin{multicols}{2}
 \label{acronyms}
 \lhead{\emph{Acronyms}}
 \input{acronyms.tex}
+\end{multicols}
+
 \pagebreak
 
 %----------------------------------------------------------------------------------------
