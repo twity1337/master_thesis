@@ -11,12 +11,12 @@ The development of the \ac{K8s} cluster and the containerization of \ac{OT} hide
 The issues that require consideration during the containerization of the application are discussed in this section.
 
 \subsection{Container manifest}
-Even though the format of the container manifests "Containerfile" is compatible to the proprietary "Dockerfile" format from Docker, the \acp{CRI} do not follow the specification everywhere\cite. This is an issue while writing a Containerfile for the ContainerD \ac{CRI}. Especially in cases where line breaks in the Containerfile might be necessary to shorten long lines and increase readability. ContainerD is treating line breaks paths in string notation different compared to paths in JSON array notation and is not following the specification\cite{ManKier.20230222}.
+Even though the format of the container manifests "Containerfile" is compatible to the proprietary "Dockerfile" format from Docker, the \acp{CRI} do not follow the specification everywhere\cite. This was an issue while writing a Containerfile for the ContainerD \ac{CRI}. Especially in cases where line breaks in the Containerfile were necessary to shorten long lines and increase readability. ContainerD is treating line breaks paths in string notation different compared to paths in JSON array notation and is not following the specification\cite{ManKier.20230222}.
 \begin{lstlisting}[caption={Containerfile entrypoint specification across multiple lines in text format.}, label=lst:results.containerfile-entrypoint.text]
 ENTRYPOINT open_twin.exe \
 Service.dll
 \end{lstlisting}
-\autoref{lst:results.containerfile-entrypoint.text} shows an example of the problem. While the entry point in Docker is interpreted as \textit{open\_twin.exe Service.dll}, the interpreter in ContainerD only reads the first line as entry point and ignores the line break character "\" as in \textit{open\_twin.exe}. This causes troubles during build and execution of a container image. The container image is built in Docker, whereas it does not run in ContainerD. To overcome this flaw, the \textit{ENTRYPOINT} definition has to be written in JSON notation. If defined as in \autoref{lst:results.containerfile-entrypoint.json} the interpreter 
+\autoref{lst:results.containerfile-entrypoint.text} shows an example of the problem. While the entry point in Docker is interpreted as \textit{open\_twin.exe Service.dll}, the interpreter in ContainerD only reads the first line as entry point and ignores the line break character "\" as in \textit{open\_twin.exe}. This causes troubles during build and execution of a container image. The container image is built in Docker, whereas it does not run in ContainerD. Since, ContainerD on \ac{Windows} cannot build container images, it does also not work the other way around. To overcome this flaw, the \textit{ENTRYPOINT} definition has to be written in JSON notation. If defined as in \autoref{lst:results.containerfile-entrypoint.json} the interpreter 
 \begin{lstlisting}[caption={Containerfile entrypoint specification across multiple lines in JSON format.}, label=lst:results.containerfile-entrypoint.json]
 ENTRYPOINT ["open_twin.exe", 
 "Service.dll"]
@@ -30,18 +30,27 @@ While it is normal to have a requirement for the same operating system kernel wh
 
 - OpenTwin needs to be compiled on the system it is running. Developers need to fix this issue.
 
-\section{Discovered issues and pitfalls}
+
+% ----------------------------------------------------------------------------------------------------------
 
 
+X Containerfile support differs from Dockerfile: Path of ENTRYPOINT is not treated the same way.
+- Container namespace: If imported manually, image has to be shifted from default ns to k8s.io ns
+	- Container cannot be built on Windows in ContainerD /nerdctl - need to be build on docker first and then transferred
 
 - K8s Documentation redirects to a different page when searching for tutorial for adding windows nodes
 - Error messages of Windows hcs shim are not explanatory
 
 - Windows needs to have certain Update installed to run flannel container
 
+- Windows base image has to have same build number than host computer (not the same in linux containers)
 
 - Scripts and docs are maintained by a relatively small community (SIG windows tools)
 
 - Cluster networking throws weird error messages when performed inside hyper-v vm ("Directory not found")
 
 - Docker support was removed, containerd is not fully supported yet (without bugs) in Windows
+
+- OpenTwin needs to be compiled on the system it is running. Development team needs to fix this issue.
+
+- MongoDB server container image cannot be initialized easily on Windows

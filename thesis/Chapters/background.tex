@@ -8,7 +8,7 @@
 \lhead{Chapter \ref*{chap:background}. \emph{Background and related work}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
 
 \section{Application under study}
-\acf{OT} is a open-source simulation platform developed by the university of Applied Sciences in Frankfurt, Germany. It covers features like computer aided design and meshing and also is a physics simulation (having solvers for Finite Integration and PHREEC). The projects can be administered by a user and group management (see~\autoref{fig:ot-project}). Furthermore, all changes on a project are version-controlled. The application is designed in a way, that only a local thin-client needs to run on the users computer. After entering the login credentials (see~\autoref{fig:ot-login}), the client securely connects to a centralized service platform where the computation is made. The results and even the \ac{UI} information is sent back to the client application. This has the benefit, that also weak computers can run the application.
+\acf{OT} is a open-source simulation platform developed by the university of Applied Sciences in Frankfurt, Germany. It covers features like computer aided design and meshing and is also a physics simulation (having solvers for Finite Integration and PHREEC). The projects can be administered by a user and group management (see~\autoref{fig:ot-project}). Furthermore, all changes on a project are version-controlled. The application is designed in a way, that only a local thin-client needs to run on the users computer. After entering the login credentials (see~\autoref{fig:ot-login}), the client securely connects to a centralized service platform where the computation is made. The results and even the \ac{UI} information is sent back to the client application. This has the benefit, that also weak computers can run the application.
 
 \begin{figure}[h]
 	\centering
@@ -35,9 +35,8 @@
 The development team consists of a small core team and several student groups during the semester.
 
 
-% TODO: Auflistung der Compute Services
-
 \section{Baseline architecture}
+\label{chap:background.baseline_architecture}
 The current system design consists of multiple levels. It is a multi-process application based on the programming languages C++ and Rust. The source code is mainly aligned to be built on Microsoft \ac{Windows}. A port to Unix based systems is currently in work. Therefore parts of the code base are aligned for multiple system architectures already, but the application is not yet able to be compiled for Linux.
 
 Each microservice of the application is included dynamically and linked as a \ac{DLL} file. For starting the microservice environment, a central executable ("open\_\ twin.exe") is started with the corresponding arguments for the services (like the server's binding address, port numbers, and passwords) (see~\autoref{lst:ot-command}) and the path to the \ac{DLL} file itself. The UI front end, which is started by the user directly, is compiled in its own executable ("uiFrontend.exe").
@@ -107,6 +106,8 @@ The traffic between services is encrypted using \ac{mTLS} technology. While regu
 
 % TODO: Section about "Containerization and/vs VM"
 % TODO: Section about "Container & Container image"
+% TODO: Einführung Containerd CLI tools (crictl, nerdctl, ctr)
+% TODO: ContainerD kann kein Build auf Windows - buildkit daemon is required, buildkit: only linux is supported (https://github.com/moby/buildkit) buildkitd is only available for Linux currently. 
 
 
 \section{Network traffic encryption}
@@ -122,7 +123,7 @@ After sending the certificate from server to the client, the client validates th
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.55\textwidth]{Figures/tls.pdf}
-	\caption{Simplified visualization of the \ac{TLS} handshake. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message "Hello Done" (4). The client then validates the certificate and compares it against the chain of trust. Afterwards, the key exchange starts (5,6) to ensure an encrypted communication.}
+	\caption{Simplified visualization of the \ac{TLS} handshake\cite{Rescorla.2018}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message "Hello Done" (4). The client then validates the certificate and compares it against the chain of trust. Afterwards, the key exchange starts (5,6) to ensure an encrypted communication.}
 	\label{fig:tls-protocol}
 \end{figure}
 
@@ -131,13 +132,13 @@ After sending the certificate from server to the client, the client validates th
 The mutual authentication is adding another step to the one-way authentication. The application of it is used in \ac{mTLS}. Instead of just sending the server's certificate to the client, the client also sends a certificate to the server. Therefore, not only the authenticity of the server is ensured, but also of the client.
 
 As can be seen in \autoref{fig:mtls-protocol}, compared to the \ac{TLS} handshake, the \ac{mTLS} handshake involves additional messages 5 and 6 for sending and validating the client's certificate.
-Unlike with the server certificate, the client certificate is not validated against a publicly available root authority. Instead, the server acts as root authority, creates the client certificate and ships it with the application.
+Unlike with the server certificate, the client certificate is not validated against a publicly available root authority\cite{Cloudflare.20230309}. Instead, the server acts as root authority, creates the client certificate and ships it with the application\cite{Cloudflare.20230309}.
 
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.55\textwidth]{Figures/mtls.pdf}
-	\caption{Simplified visualization of the \ac{mTLS} handshake. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message "Hello Done" (4). The client then validates the certificate and compares it against the locally stored root authority. Afterwards, the client sends its certificate to the server (5). The server validates the client certificate against its local root authority and grants access to the service (6). Afterwards, the key exchange starts (7,8) to ensure an encrypted communication.}
+	\caption{Simplified visualization of the \ac{mTLS} handshake\cite{Cloudflare.20230309}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message "Hello Done" (4). The client then validates the certificate and compares it against the locally stored root authority. Afterwards, the client sends its certificate to the server (5). The server validates the client certificate against its local root authority and grants access to the service (6). Afterwards, the key exchange starts (7,8) to ensure an encrypted communication.}
 	\label{fig:mtls-protocol}
 \end{figure}
 

@@ -17,7 +17,7 @@ For containerizing the \ac{OT} application, several changes were applied to its 
 
 \subsubsection*{Introduction of exit codes}
 The microservice \ac{DLL} files have return codes for different error cases. This is, for instance a code 200 in the \ac{AUTH} for connection issues to the database. As with process exit codes, a zero return code indicates a successful termination. Even though the main executable "open\_twin.exe" retrieves the return code, it did not convert these codes into proper process exit codes. 
-Exit-Codes are a crucial part of the \ac{K8s}'s life cycle management as described in \autoref{chap:design.life_cycle}.
+Exit-Codes are a crucial part of the \ac{K8s}'s life cycle management as described in \autoref{chap:design.life_cycle}. Therefore, the return codes need to be converted into process exit codes.
 
 The surrounding lines of code in the main executable are shown in \autoref{lst:code_changes.exitcodes.before}.
 \begin{lstlisting}[label=lst:code_changes.exitcodes.before, caption={Former code snippet from main executable for calling the microservice library code in Rust (/Microservices/OpenTwin/src/main.rs)}, language=rust, firstnumber=85]
@@ -69,20 +69,45 @@ Also, the general error tracing has been improved. In the main services \ac{GSS}
 For the current time being, there is an ongoing work to replace the logging to standard output by forwarding the log lines to a central logging library.
 
 \subsubsection*{Certificate changes}
-- Certificate template was extended by localhost/127.0.0.1
+Since \ac{OT} is using \ac{mTLS} for communication between services, the \ac{CSR} file needs to contain proper host specifications. There is a script for the substitution of placeholders in a template \ac{CSR} file. However, this process does not work if performed for a containerized application. If the replacement takes place during the creation of the container, the final host name or \ac{IP} address does not yet exist. If, on the other hand, the automatic replacement is done later, it cannot be carried out from outside the container, as the script automatically replaces only the local host name.
 
+%TODO: Wie dieses Problem gelöst?? Certificate template was extended by localhost/127.0.0.1???
 
-- OpenTwin excutable (rust server) listens on all interface (because of Docker); Port parsing
-- Bugfix for OpenGL error in uiFrontend
+\subsubsection*{Listening on all interfaces}
+Container images have a certain network image for communicating to external hosts. Processes inside the container have to bind to this network interface. However, the \ac{IP} address of this network interface is unpredictable during compile time. The server processes that run inside a container therefore have to bind to all available network interfaces to be accessible to the outer network.
+Furthermore, the services exchange service information with other services as described in \autoref{chap:background.baseline_architecture}. However, the binding address must differ from this published address in a containerized environment, since the binding address is mostly not accessible from the public. 
+
+Instead of binding to all network interfaces, the main executable in \ac{OT} was only able to bind to a given \ac{IP} address (based on the published service address) only. Also, it was not possible to configure a different binding address than the one published to other services.
+
+\autoref{lst:listen_all_interfaces.before} shows the affected lines of code in the main executable. The passed argument for the service \ac{URL} is forwarded to the server listener class. Afterwards, the address is printed on the console. The service \ac{URL}, here passed as variable, consists of the service address and the port of the service.
+\begin{lstlisting}[label=lst:listen_all_interfaces.before, caption={Listener binding before the applied changes (\textit{Microservices/OpenTwin/src/main.rs})}, language=rust, firstnumber=145]
+let listener = net::TcpListener::bind(&service_url).await?;
+println!("Starting server at {:?}", service_url);
+\end{lstlisting}
+
+To not affect the outer interface, the changes work with the data already provided. This means, the passed arguments to the main executable do not require a change.
+\begin{lstlisting}[label=lst:listen_all_interfaces.after, caption={Listener binding after the applied changes. The service url is parsed, based on its port. Binding is done on all interfaces. (\textit{Microservices/OpenTwin/src/main.rs})}, language=rust, firstnumber=150]
+let service_port = Url::parse(&format!("https://{}", service_url))
+.expect(&format!("Invalid service url. Unable to parse service url: {}", service_url))
+.port();
+if service_port.is_none() {
+  panic!("Invalid service url. Service url is lacking port defintion: {}", service_url);
+}
+let binding_address = format!("0.0.0.0:{}", service_port.unwrap().to_string());
+let listener = net::TcpListener::bind(&binding_address).await?;
+println!("Server listening on {:?} (publishing {:?})", binding_address, service_url);
+\end{lstlisting}
+The binding address is separated from the published address, since the address in the argument still gets passed to the microservice \ac{DLL}. Afterwards, the service \ac{URL} is processed as shown in \autoref{lst:listen_all_interfaces.after}. First, the given service \ac{URL} is parsed and the port number is extracted. If no port is found or the parsing failed, the application fails and shows an error. Afterwards, the port number is concatenated with the binding address "0.0.0.0" and therefore the server binds to all addresses. The last line shows the new output containing the port number and the address published to other services.
+
+% TODO - Bugfix for OpenGL error in uiFrontend (not necessary??)
 
 \subsection{Container definition}
+There are currently three container images prepared for containerization of \ac{OT}. These cover the main services for \ac{GSS}, \ac{LSS} and \ac{AUTH}. 
 
 
 % Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host operating system.
 % Deployment-Verzeichnis muss dafür initial auf Node kopiert werden.
 % TODO: (Skript ("setup-node") dafür schreiben, was neusten release von github zieht (RUN download?) und image autom. baut + image pusht?)  - base image (FROM) mittels args dynamisch gestalten?
-% dabei beachten, dass Klammern gesetzt werden (Json-Style) bei Entrypoint, da sonst zwar der Build bei docker funktioniert, aber das Image nicht in containerd läuft.
-% nach Bau von Image muss dieses in richtigen containerd namespace verschoben werden, wenn image lokal vorhanden und nicht von registry gezogen wird.
 
 
 % TODO: Skript zum bauen des Images beschreiben
@@ -117,13 +142,13 @@ For setting up the master node on Linux a system based on Debian Bullseye 11.5 h
 
 
 % TODO: Define the prerequisite packages: containerd
-After installing the pre-requisite packages, a containerd config file needs to be created. For this, the command from \autoref{lst:master.containerd_config} is applied.
+After installing the prerequisite packages, a ContainerD configuration file needs to be created. For this, the command from \autoref{lst:master.containerd_config} is applied.
 \begin{lstlisting}[label=lst:master.containerd_config, caption={Bash command for setting up containerd config}]
 sudo sysctl net.bridge.bridge-nf-call-iptables=1
 echo 1 > /proc/sys/net/ipv4/ip_forward
 sudo containerd config default | sudo tee /etc/containerd/config.toml &>/dev/null
 \end{lstlisting}
-Afterwards the systemd \ac{cgroup} is added to the runtime options of containerd and the its service is restarted.
+Afterwards the systemd \ac{cgroup} is added to the runtime options of ContainerD and the its service is restarted.
 %\begin{lstlisting}[label=lst:containerd_config, caption={Bash command for setting up containerd config}]
 %sudo containerd config default | 
 %sed 's/\[plugins.\"io.containerd.grpc.v1.cri\".containerd.runtimes.runc.options\]/&\n            SystemdCgroup = true/' |
@@ -137,13 +162,13 @@ sudo kubeadm init --config config.yaml
 
 \subsubsection{Installing a Container Network Interface}
 After successfully running the initialization, the cluster overlay network \tcode{flannel} needs to be setup.
-This is required for working with Windows worker nodes.  To setup \tcode{flannel} the respective pod description can be directly downloaded from the vendor\footnote{https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml}. In the configuration the VNI (4096) and port (4789) for Flannel on Windows were set. Afterwards the configuration has been applied on the cluster.
+This is required for working with \ac{Windows} worker nodes.  To setup \tcode{flannel} the respective pod description can be directly downloaded from the vendor\footnote{https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml}. In the configuration the \ac{VNI} (4096) and port (4789) for Flannel on \ac{Windows} were set. Afterwards the configuration has been applied on the cluster.
 After linking kubectl to the local control plane node, the successful setup of the cluster can be checked with the \tcode{kubectl} command.
 
 
 \subsubsection{Adding the proxy daemonsets}
-For using Windows worker nodes in a Kubernetes cluster, additional configmaps and daemonsets need to be applied on the cluster. Those are used for setting up a proxy for \tcode{flannel}.
-\begin{lstlisting}
+For using \ac{Windows} worker nodes in a \ac{K8s} cluster, additional configuration mappings ("configmaps") and daemon sets need to be applied on the cluster. Those are used for setting up a proxy for \tcode{flannel}. The additional objects are applied running the two commands shown in \autoref{lst:master.proxy_daemonsets}
+\begin{lstlisting}[label=lst:master.proxy_daemonsets, caption={Bash command for adding the flannel overlay configuration\cite{GitHubKubernetesSIGWindowsTools.20230213}}]
 curl -L https://github.com/kubernetes-sigs/sig-windows-tools/releases/latest \
   /download/kube-proxy.yml | sed 's/VERSION/v1.25.3/g' | kubectl apply -f -
 kubectl apply -f https://github.com/kubernetes-sigs/sig-windows-tools/releases \
@@ -152,28 +177,28 @@ kubectl apply -f https://github.com/kubernetes-sigs/sig-windows-tools/releases \
 
 \subsection{Creating the worker node}
 % Prereqs: Hyper-V,  Containers, crictl
-On the Windows worker node, the prerequisites were installed first. While installing the prerequisite \tcode{crictl} it was added to the \tcode{PATH} environment variable. After the setup, the node preparation scripts of the Kubernetes \ac{SIG} were retrieved. Before running the scripts, the \ac{CNI} version needs to be aligned to the same version written on the master node. Therefore the appearances of v0.2.0 have been replaced with v0.3.0 respectively.
-Afterwards the installation script was executed. It sets up the \ac{NAT} configuration on the worker node and registers containerd as a service.
+On the Windows worker node, the prerequisites were installed first. While installing the prerequisite \tcode{crictl} it is added to the \tcode{PATH} environment variable. After the setup, the node preparation scripts of the \ac{K8s} \ac{SIG} are retrieved. Before running the scripts, the \ac{CNI} version needs to be aligned to the same version running on the master node. Therefore the appearances of "v0.2.0" is replaced with "v0.3.0" respectively.
+Afterwards, the installation script is executed. It sets up the \ac{NAT} configuration on the worker node and registers ContainerD as a service.
 % [plugins."io.containerd.grpc.v1.cri"].sandbox_image
-For having a valid image at a later point in time, the value sandbox\_image in cri in containerd's configuration file (config.toml) needs to be replaced with a newer version.
+For having a valid image at a later point in time, the \ac{CRI} value "sandbox\_image" in ContainerD's configuration file (\textit{config.toml}) needs to be replaced with a newer version.
 
-After sucessfully setting up the \ac{NAT} and installing containerd as a service, the node will be finally prepared to host tasks. For this, another powershell script "PrepareNode"\footnote{https://github.com/kubernetes-sigs/sig-windows-tools/releases/download/v0.1.5/PrepareNode.ps1} from the Kubernetes \ac{SIG} was run. After running the script the resulting "StartKubelet" file needs to be changed to drop invalid arguments.
+After successfully setting up the \ac{NAT} and installing ContainerD as a service, the node will be finally prepared to host tasks. For this, another Powershell script "PrepareNode"\footnote{https://github.com/kubernetes-sigs/sig-windows-tools/releases/download/v0.1.5/PrepareNode.ps1} from the Kubernetes \ac{SIG} runs. After running the script, the resulting "StartKubelet" file needs to be changed to drop invalid arguments.
 
 % C:\k\kubelet.exe $global:KubeletArgs --cert-dir=$env:SYSTEMDRIVE\var\lib\kubelet\pki --config=/var/lib/kubelet/config.yaml --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --hostname-override=$(hostname)
 Furthermore, the following lines were added to the Kubelet configuration:
-\begin{lstlisting}
+\begin{lstlisting}[label=lst:master.configtoml_changes, caption={Configuration changes in ContainerD configuration file (\textit{config.toml})\cite{GitHubKubernetesSIGWindowsTools.20230213}}]
 enforceNodeAllocatable: []
 cgroupsPerQOS: false
 enableDebuggingHandlers: true
 \end{lstlisting}
-Since the configuration changes needs to be served only to Windows machines (config value are valid for Windows only) we (!!WE!!) need to manually change the configuration on the nodes locally. This
+These configuration values are valid for \ac{Windows} machines only and cause an error in Kubelet on Linux. The configuration changes therefore can only be served to Windows machines and the configuration on the nodes needs to be changed locally.
 
 % Es wurde "New-HnsNetwork -Type NAT -Name nat -Gateway 10.244.0.1 -AdressPrefix 10.244.240.0/20" ausgeführt
 % TODO: Evtl. testen, ob man mit Docker auf Netzwerk zugreifen kann? "Object already exists"
 % TODO: Evtl.- auf calico wechseln? Oder worker node als hostprocess ausführen
 % TODO: -- siehe: https://github.com/kubernetes-sigs/sig-windows-tools/issues/128
 
-After successful run of the preparation script the node was ready to join the cluster.
+After successful run of the preparation script the node is ready to join the cluster.
 
 
 \section{Automatic setup}
