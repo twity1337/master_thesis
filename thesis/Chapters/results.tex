@@ -35,8 +35,22 @@ While it is normal to have a requirement for the same operating system kernel wh
 
 
 X Containerfile support differs from Dockerfile: Path of ENTRYPOINT is not treated the same way.
+
+
 - Container namespace: If imported manually, image has to be shifted from default ns to k8s.io ns
 	- Container cannot be built on Windows in ContainerD /nerdctl - need to be build on docker first and then transferred
+
+\subsection{Local images namespace}
+If images are locally imported, they have to be in the ContainerD namespace "k8s.io" to get recognized by \ac{K8s}. However, if images are built with Docker, they are not recognized by ContainerD and additionally get the default namespace assigned. Altough, images pulled with \ac{K8s} from a image registry are getting imported correctly. The faulty namespace behavior cannot be changed during the image build.  Therefore, the change of the namespace is required for locally imported images on the one hand, and it requires a transferation of the image from the Docker environment to the ContainerD environemnt on the other hand.
+Thus, the only solution to use local images without uploading them to a image registry, is by performing the following steps for each image:
+\begin{enumerate}
+	\item Building the image in Docker (using \texttt{docker build})
+	\item Exporting the image to an archive file (using \texttt{docker save})
+	\item Loading the image to ContainerD to correct namespace (using \texttt{ctr --namespace k8s.io image import})
+\end{enumerate}
+To automate this process for a batch of container files, a powershell script was created.
+
+
 
 - K8s Documentation redirects to a different page when searching for tutorial for adding windows nodes
 - Error messages of Windows hcs shim are not explanatory
