@@ -39,7 +39,7 @@ The development team consists of a small core team and several student groups du
 \label{chap:background.baseline_architecture}
 The current system design consists of multiple levels. It is a multi-process application based on the programming languages C++ and Rust. The source code is mainly aligned to be built on Microsoft \ac{Windows}. A port to Unix based systems is currently in work. Therefore parts of the code base are aligned for multiple system architectures already, but the application is not yet able to be compiled for Linux.
 
-Each microservice of the application is included dynamically and linked as a \ac{DLL} file. For starting the microservice environment, a central executable ("open\_\ twin.exe") is started with the corresponding arguments for the services (like the server's binding address, port numbers, and passwords) (see~\autoref{lst:ot-command}) and the path to the \ac{DLL} file itself. The UI front end, which is started by the user directly, is compiled in its own executable ("uiFrontend.exe").
+Each microservice of the application is included dynamically and linked as a \ac{DLL} file. For starting the microservice environment, a central executable (\enquote{open\_\ twin.exe}) is started with the corresponding arguments for the services (like the server's binding address, port numbers, and passwords) (see~\autoref{lst:ot-command}) and the path to the \ac{DLL} file itself. The UI front end, which is started by the user directly, is compiled in its own executable (\enquote{uiFrontend.exe}).
 
 \begin{lstlisting}[language=sh, caption={Command line of Open Twin Service start}, label=lst:ot-command]
 open_twin.exe GlobalSessionService.dll \
@@ -124,7 +124,7 @@ After sending the certificate from server to the client, the client validates th
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.55\textwidth]{Figures/tls.pdf}
-	\caption{Simplified visualization of the \ac{TLS} handshake\cite{Rescorla.2018}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message "Hello Done" (4). The client then validates the certificate and compares it against the chain of trust. Afterwards, the key exchange starts (5,6) to ensure an encrypted communication.}
+	\caption{Simplified visualization of the \ac{TLS} handshake\cite{Rescorla.2018}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message \enquote{Hello Done} (4). The client then validates the certificate and compares it against the chain of trust. Afterwards, the key exchange starts (5,6) to ensure an encrypted communication.}
 	\label{fig:tls-protocol}
 \end{figure}
 
@@ -139,19 +139,19 @@ Unlike with the server certificate, the client certificate is not validated agai
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.55\textwidth]{Figures/mtls.pdf}
-	\caption{Simplified visualization of the \ac{mTLS} handshake\cite{Cloudflare.20230309}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message "Hello Done" (4). The client then validates the certificate and compares it against the locally stored root authority. Afterwards, the client sends its certificate to the server (5). The server validates the client certificate against its local root authority and grants access to the service (6). Afterwards, the key exchange starts (7,8) to ensure an encrypted communication.}
+	\caption{Simplified visualization of the \ac{mTLS} handshake\cite{Cloudflare.20230309}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message \enquote{Hello Done} (4). The client then validates the certificate and compares it against the locally stored root authority. Afterwards, the client sends its certificate to the server (5). The server validates the client certificate against its local root authority and grants access to the service (6). Afterwards, the key exchange starts (7,8) to ensure an encrypted communication.}
 	\label{fig:mtls-protocol}
 \end{figure}
 
 \subsection{Certificate creation}
-For creation of certificates in the application landscape of \ac{OT}, CloudFlare's public key infrastructure toolkit "cfssl"\footnote{cfssl: https://cfssl.org/ or https://github.com/cloudflare/cfssl} is used.
+For creation of certificates in the application landscape of \ac{OT}, CloudFlare's public key infrastructure toolkit \enquote{cfssl}\footnote{cfssl: https://cfssl.org/ or https://github.com/cloudflare/cfssl} is used.
 For generating certificates with the toolkit, it is fed with a JSON file with subject information for the \ac{CSR}.
 
 It contains information about the issuer, as well as the name and cryptography algorithm of the certificate.
 Additionally, the client and server certificate that derive from the root \ac{CA} contain information for whitelisted hosts in their \ac{CSR} JSON file. If a host is not mentioned in the resulting certificate, requests from the corresponding host are rejected.
 \autoref{lst:background.ca-csr} shows such a configuration with accepted host names in the form of a \ac{CSR}.
 
-\begin{lstlisting}[label=lst:background.ca-csr, caption={Example of meta data in form of \ac{CSR} configuration. "CN" is the certificate name. "hosts" describes the accepted hostnames, "key" describes information about the cryptography algorithm, "names" contains meta data of the organization}]
+\begin{lstlisting}[label=lst:background.ca-csr, caption={Example of meta data in form of \ac{CSR} configuration. \enquote{CN} is the certificate name. \enquote{hosts} describes the accepted hostnames, \enquote{key} describes information about the cryptography algorithm, \enquote{names} contains meta data of the organization}]
 {
   "CN": "OpenTwin",
   "hosts": ["localhost", "127.0.0.1"],

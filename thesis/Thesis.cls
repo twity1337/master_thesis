@@ -152,7 +152,7 @@
         keywordstyle=\color{blue},
         commentstyle=\color[rgb]{0.13,0.55,0.13}\em,
         stringstyle=\color[rgb]{0.7,0,0} }
-\def\tcode#1{\texttt{\scriptsize{#1}}}
+\def\tcode#1{\texttt{\normalsize{#1}}}
 
 \usepackage[pdfpagemode={UseOutlines},bookmarks=true,bookmarksopen=true,
    bookmarksopenlevel=0,bookmarksnumbered=true,hypertexnames=false,
@@ -187,6 +187,7 @@
 %----------------------------------------------------------------------------------------
 \usepackage{fontspec}
 \usepackage[ttscale=.85]{libertine}
+% \setmonofont[Kern=0.8]{Consolas}
 \uccode`ß="1E9E
 \thesistitle{Containerized multi-level deployment for a distributed adaptive microservice application} % Your thesis title - this is used in the title and abstract
 %-------------------------------------------------  

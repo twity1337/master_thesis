@@ -30,6 +30,7 @@
 
 \graphicspath{{Pictures/}} % Specifies the directory where pictures are stored
 
+\usepackage{csquotes}
 \usepackage{comment}
 \usepackage{multirow}
 \usepackage{multicol}
@@ -41,6 +42,8 @@
 
 % ---------- LANGUAGE DEFINITIONS ----------
 \usepackage{custom-lstlisting-definitions}
+
+% New commands for temporily hiding line numbers (for multi line commands)
 \let\origthelstnumber\thelstnumber
 \makeatletter
 \newcommand*\Suppressnumber{%

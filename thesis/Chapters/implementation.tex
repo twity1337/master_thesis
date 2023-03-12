@@ -8,7 +8,7 @@
 % \end{lstlisting}
 
 \section{Containerization of Services}
-Container images are provided for running the application inside the \ac{CRI}. Definition of the container manifest is done in the "Containerfile"\footnote{Containerfile: https://www.mankier.com/5/Containerfile} format.
+Container images are provided for running the application inside the \ac{CRI}. Definition of the container manifest is done in the \enquote{Containerfile}\footnote{Containerfile: https://www.mankier.com/5/Containerfile} format.
 
 % TODO: ENTWEDER-ODER: Build has to be done inside the container. / All binary files are part of the container image.
 
@@ -16,7 +16,7 @@ Container images are provided for running the application inside the \ac{CRI}. D
 For containerizing the \ac{OT} application, several changes were applied to its code base. This improves error handling and error tracing of the application and therefore simplifies development of the cluster. In the following sections, the several code changes are described in detail.
 
 \subsubsection*{Introduction of exit codes}
-The microservice \ac{DLL} files have return codes for different error cases. This is, for instance a code 200 in the \ac{AUTH} for connection issues to the database. As with process exit codes, a zero return code indicates a successful termination. Even though the main executable "open\_twin.exe" retrieves the return code, it did not convert these codes into proper process exit codes. 
+The microservice \ac{DLL} files have return codes for different error cases. This is, for instance a code 200 in the \ac{AUTH} for connection issues to the database. As with process exit codes, a zero return code indicates a successful termination. Even though the main executable \enquote{open\_twin.exe} retrieves the return code, it did not convert these codes into proper process exit codes. 
 Exit-Codes are a crucial part of the \ac{K8s}'s life cycle management as described in \autoref{chap:design.life_cycle}. Therefore, the return codes need to be converted into process exit codes.
 
 The surrounding lines of code in the main executable are shown in \autoref{lst:code_changes.exitcodes.before}.
@@ -24,7 +24,7 @@ The surrounding lines of code in the main executable are shown in \autoref{lst:c
 let _result = initialize(siteid_c_str.as_ptr(), service_c_str.as_ptr(), db_c_str.as_ptr(), dir_c_str.as_ptr());
 \end{lstlisting}
 
-A new condition for non-zero exit codes was added as shown in \autoref{lst:code_changes.exitcodes.after}. The variable \texttt{\_result}  contains the returned exit code of the library \ac{DLL}, whereas \texttt{lib\_path} contains the path to the library \ac{DLL}. As can be seen, it is used to describe the affected service name in a error message (line 87).
+A new condition for non-zero exit codes was added as shown in \autoref{lst:code_changes.exitcodes.after}. The variable \tcode{\_result}  contains the returned exit code of the library \ac{DLL}, whereas \tcode{lib\_path} contains the path to the library \ac{DLL}. As can be seen, it is used to describe the affected service name in a error message (line 87).
 \begin{lstlisting}[label=lst:code_changes.exitcodes.after, caption={Code changes in Rust main executable for additional treatment of exit codes (\textit{/Microservices/OpenTwin/src/main.rs})}, language=rust, firstnumber=86]
 if _result != 0 {
   eprintln!("Library/Service initialization ({}:init()) failed with exit code {}", lib_path, _result);
@@ -35,7 +35,7 @@ if _result != 0 {
  
 \subsubsection*{Debug verbosity in launcher}
 By default Rust programs show a window for console output no matter if it was built in release mode or with debug parameters. However, the main executable uses conditional compilation to set configuration attributes about the windows subsystem.
-Rust provides a compilation option "debug\_assertions" that is set to "true" for compilations without code optimization\cite{Rust.20230209}. Therefore it is set to "true" if the application runs in debug mode. As shown in \autoref{lst:cond_compilation_windows_subsystem} with conditional compilation, this build option is checked and console output is only shown for debug builds.
+Rust provides a compilation option \tcode{debug\_assertions} that is set to \enquote{true} for compilations without code optimization\cite{Rust.20230209}. Therefore it is set to \enquote{true} if the application runs in debug mode. As shown in \autoref{lst:cond_compilation_windows_subsystem} with conditional compilation, this build option is checked and console output is only shown for debug builds.
 \begin{lstlisting}[label=lst:cond_compilation_windows_subsystem, caption={Conditional compilation for disabling console output in non-debug builds (\textit{/Microservices/OpenTwin/src/main.rs})}, language=rust, firstnumber=2]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 \end{lstlisting}
@@ -51,18 +51,18 @@ IF "%~1"=="/V" (
   ECHO ON
 )
 \end{lstlisting}
-As first step, a new command line argument has been introduced. If "/V" is appended to the start of the launcher batch file it will run with higher verbosity.  As can be seen in \autoref{lst:launcher_extension.parameter_validation.after}, with "/V" appended, two new variables "pause\_prefix" and "pause\_suffix" are set (line 20-21). Furthermore, command output is enabled to debug the launcher file itself (line 22).
+As first step, a new command line argument has been introduced. If \enquote{/V} is appended to the start of the launcher batch file it will run with higher verbosity.  As can be seen in \autoref{lst:launcher_extension.parameter_validation.after}, with \enquote{/V} appended, two new variables \tcode{pause\_prefix} and \tcode{pause\_suffix} are set (line 20-21). Furthermore, command output is enabled to debug the launcher file itself (line 22).
 
 \begin{lstlisting}[label=lst:launcher_extension.call.after, caption={Additional command extension for preventing close of window after termination (\textit{/Microservices/Launcher/OpenTwin\_session.bat})}, language=cmd, firstnumber=34]
 START "AUTHORIZATION SERVICE" %pause_prefix%open_twin.exe AuthorisationService.dll <*@ \Suppressnumber @*>
  "%OPEN_TWIN_SERVICES_ADDRESS%:%OPEN_TWIN_AUTH_PORT%" "%OPEN_TWIN_MONGODB_ADDRESS%"
  "%OPEN_TWIN_MONGODB_PWD%"%pause_suffix% <*@ \Reactivatenumber @*>
 \end{lstlisting}
-As can be seen in \autoref{lst:launcher_extension.call.after}, the newly defined variables "pause\_prefix" and "pause\_suffix" are appended to the command of starting a service. This ensures that a service process is started in a new window and the command is followed by the \ac{Windows} "pause" command to stop and wait for user interaction.
+As can be seen in \autoref{lst:launcher_extension.call.after}, the newly defined variables \tcode{pause\_prefix} and \tcode{pause\_suffix} are appended to the command of starting a service. This ensures that a service process is started in a new window and the command is followed by the \ac{Windows} \enquote{pause} command to stop and wait for user interaction.
 
 
 \subsubsection*{Enhanced logging and error tracing}
-For improving the error tracing, the overall log amount has been increased. This involves enabling the logging of the central logging functions inside the library "OpenTwinCommunication". The logging mechanism did not use logging to standard output. Instead, calling the respective functions for logs were just ignored. This was changed and logging to standard output has been introduced.
+For improving the error tracing, the overall log amount has been increased. This involves enabling the logging of the central logging functions inside the library \enquote{OpenTwinCommunication}. The logging mechanism did not use logging to standard output. Instead, calling the respective functions for logs were just ignored. This was changed and logging to standard output has been introduced.
 Additionally, more calls to the logging mechanism, including caller information, have been added. For instance, the \ac{AUTH} now shows error messages for caught exceptions and errors during database initialization.
 Also, the general error tracing has been improved. In the main services \ac{GSS}, \ac{LSS} and \ac{AUTH}, exception handling has been added, where it was not present before. Furthermore, the formatting of exception messages was improved and more information has been added.
 
@@ -97,7 +97,7 @@ let binding_address = format!("0.0.0.0:{}", service_port.unwrap().to_string());
 let listener = net::TcpListener::bind(&binding_address).await?;
 println!("Server listening on {:?} (publishing {:?})", binding_address, service_url);
 \end{lstlisting}
-The binding address is separated from the published address, since the address in the argument still gets passed to the microservice \ac{DLL}. Afterwards, the service \ac{URL} is processed as shown in \autoref{lst:listen_all_interfaces.after}. First, the given service \ac{URL} is parsed and the port number is extracted. If no port is found or the parsing failed, the application fails and shows an error. Afterwards, the port number is concatenated with the binding address "0.0.0.0" and therefore the server binds to all addresses. The last line shows the new output containing the port number and the address published to other services.
+The binding address is separated from the published address, since the address in the argument still gets passed to the microservice \ac{DLL}. Afterwards, the service \ac{URL} is processed as shown in \autoref{lst:listen_all_interfaces.after}. First, the given service \ac{URL} is parsed and the port number is extracted (lines 150-152). If no port is found or the parsing failed, the application fails and shows an error (lines 153-155). Afterwards, the port number is concatenated with the binding address \enquote{0.0.0.0} and therefore the server binds to all addresses (lines 156-157). The last line shows the new output containing the port number and the address published to other services.
 
 % TODO - Bugfix for OpenGL error in uiFrontend (not necessary??)
 
@@ -131,7 +131,7 @@ OPEN_TWIN_LDS_PORT=9095
 \end{lstlisting}
 \end{comment}
 
-The container files differ in the runtime specification. They run the same entry point, but have a different process running as command. Furthermore, the exposed port depends on the service inside the container. 
+The container files differ in the runtime specification. They run the same entry point, but have a different process running as command. Besides, the exposed port depends on the service inside the container. 
 After defining the command and copying the files into the container image, the certificates are built as part of the image file system. The discussed section of the container file can be seen in \autoref{lst:containerfile.3}.
 \begin{lstlisting}[label=lst:containerfile.3, caption={Containerfile for the \ac{GSS}. Description of the command line and certificate creation. (\textit{Distribution/Container/globalsession.Containerfile})}, language=docker, firstnumber=21]
 ENTRYPOINT ["cmd", "/C"]
@@ -152,71 +152,118 @@ WORKDIR C:/app/Deployment
 
 
 \section{Cluster Setup}
-The following section describes the setup of different machines in the cluster, so called nodes. While the master node refers to the \ac{K8s} Control-Plane node which is responsible for distribution of the workers, the worker nodes are the actual machines that are executing the applications. During development the cluster was set up on virtual machines completely, due to the lack of physical hardware.
+The following section describes the setup of different nodes in the cluster. While the master node refers to the \ac{K8s} Control-Plane node which is responsible for distribution of the workers, the worker nodes are the actual machines that are executing the applications.
+The used version of \ac{K8s} is \enquote{v1.25.3}. The version of ContainerD is \enquote{v1.6.8}, on both sides, the worker nodes and the master node.
 
+\subsection{Setting up the master node}
+For setting up the master node on Linux, a system based on Debian Bullseye 11.5 is used. Basis for the performed steps is the \ac{K8s} documentation for setting up a container runtime\cite{Kubernetes.2019} and the online tutorial of Basappa\cite{Basappa.2022}.
 
-\subsection{Creating the master node}
-% At the current time being, the Kubernetes control plane must be based on linux system. Windows control planes are not supported.
-For setting up the master node on Linux a system based on Debian Bullseye 11.5 has been used. After installing and setting up the operating system, the swap mechanism needs to be permanently turned off. This is done by editing the file system table (fstab) in file \tcode{/etc/fstab} respectively by commenting out the swap partitions and masking the systemd swap units.
+\subsubsection{Installing prerequisites and ContainerD}
+After installing and setting up the operating system, the swap mechanism needs to be permanently turned off. This is done by editing the file system table (\tcode{fstab}), in file \tcode{/etc/fstab} respectively, by commenting out the swap partitions and masking the systemd swap units as shown in \autoref{lst:disable_swap}.
 
-% sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
-% sudo systemctl mask dev-sda3.swap
+\begin{lstlisting}[label=lst:disable_swap, caption={Bash commands for disabling Swap mechanism and masking.}, language=bash]
+$ sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+$ systemctl mask dev-sda3.swap
+\end{lstlisting}
 
+The container runtime requires certain kernel features to be enabled. On Debian 11, the required kernel modules for virtual networking facilities (\tcode{br\_netfilter}) and overlay filesystems (\tcode{overlay}) are not enabled by default. Thus, they have to be manually enabled.
+% To permanently enable them and keep them enabled after reboot, the setting is stored in a file as shown in \autoref{lst:kernel_modules}.
+To permanently enable them and keep them enabled across reboots, the setting is stored in a file in the directory for loaded modules (\textit{/etc/modules-load.d/k8s.conf}).
+\begin{comment}
 % https://www.natarajmb.com/2022/06/kubernetes-debian/
-%$ cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf 
-%overlay 
-%br_netfilter 
-%EOF 
-
-%$ cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf 
-%net.ipv4.ip_forward                 = 1 
-%net.netfilter.nf_conntrack_max      = 524288 
-%EOF
-%
-
-
-% TODO: Define the prerequisite packages: containerd
-After installing the prerequisite packages, a ContainerD configuration file needs to be created. For this, the command from \autoref{lst:master.containerd_config} is applied.
-\begin{lstlisting}[label=lst:master.containerd_config, caption={Bash command for setting up containerd config}]
-sudo sysctl net.bridge.bridge-nf-call-iptables=1
-echo 1 > /proc/sys/net/ipv4/ip_forward
-sudo containerd config default | sudo tee /etc/containerd/config.toml &>/dev/null
+\begin{lstlisting}[label=lst:kernel_modules, caption={Bash commands for enabling required kernel modules.}, language=bash]
+$ cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf 
+overlay 
+br_netfilter 
+EOF 
 \end{lstlisting}
-Afterwards the systemd \ac{cgroup} is added to the runtime options of ContainerD and the its service is restarted.
-%\begin{lstlisting}[label=lst:containerd_config, caption={Bash command for setting up containerd config}]
-%sudo containerd config default | 
-%sed 's/\[plugins.\"io.containerd.grpc.v1.cri\".containerd.runtimes.runc.options\]/&\n            SystemdCgroup = true/' |
-% sudo tee /etc/containerd/config.toml >/dev/null
-% sudo service containerd restart
-%\end{lstlisting}
-After setting up the prerequisites, the cluster can be initialized by running the command line tool as shown in \autoref{lst:master.kubeadm.init} with the appropriate configuration as parameter.
-\begin{lstlisting}[label=lst:master.kubeadm.init, caption={Bash command for setting up the cluster}]
-sudo kubeadm init --config config.yaml
+\end{comment}
+
+For functional networking on the master node, \ac{K8s} also requires internal network packets being forwarded to the pods. Additionally, the tracking table for tracing network packets and their assigned connection is increased. This is a prerequisite for the applied \ac{NAT} which is used in container networking.
+New files with respective settings is created in the directory for kernel settings as shown in \autoref{lst:ip_forward}.
+\begin{lstlisting}[label=lst:ip_forward, caption={Bash commands for enabling \ac{IP} forwarding and network filtering.}, language=bash]
+$ cat <<EOF | tee /etc/sysctl.d/k8s.conf 
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1 
+net.netfilter.nf_conntrack_max      = 524288 
+EOF
+$ echo 1 > /proc/sys/net/ipv4/ip_forward
 \end{lstlisting}
 
-\subsubsection{Installing a Container Network Interface}
-After successfully running the initialization, the cluster overlay network \tcode{flannel} needs to be setup.
-This is required for working with \ac{Windows} worker nodes.  To setup \tcode{flannel} the respective pod description can be directly downloaded from the vendor\footnote{https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml}. In the configuration the \ac{VNI} (4096) and port (4789) for Flannel on \ac{Windows} were set. Afterwards the configuration has been applied on the cluster.
-After linking kubectl to the local control plane node, the successful setup of the cluster can be checked with the \tcode{kubectl} command.
+After installing ContainerD with all its prerequisites from the package registry, a configuration file (\tcode{config.toml}) is created.
+Subsequently, the SystemD \ac{cgroup} is added to the runtime options of ContainerD and its service is restarted. For this, the commands from \autoref{lst:master.containerd_config} are applied.
+\\
 
-
-\subsubsection{Adding the proxy daemonsets}
-For using \ac{Windows} worker nodes in a \ac{K8s} cluster, additional configuration mappings ("configmaps") and daemon sets need to be applied on the cluster. Those are used for setting up a proxy for \tcode{flannel}. The additional objects are applied running the two commands shown in \autoref{lst:master.proxy_daemonsets}
-\begin{lstlisting}[label=lst:master.proxy_daemonsets, caption={Bash command for adding the flannel overlay configuration\cite{GitHubKubernetesSIGWindowsTools.20230213}}]
-curl -L https://github.com/kubernetes-sigs/sig-windows-tools/releases/latest \
-  /download/kube-proxy.yml | sed 's/VERSION/v1.25.3/g' | kubectl apply -f -
-kubectl apply -f https://github.com/kubernetes-sigs/sig-windows-tools/releases \
-  /latest/download/flannel-overlay.yml
+\begin{lstlisting}[label=lst:master.containerd_config, caption={Bash command for setting up containerd config},language=bash, morekeywords={sudo, kubeadm, tee, service}]
+$ containerd config default | <*@ \Suppressnumber @*>
+  sed 's/\[plugins.\"io.containerd.grpc.v1.cri\".containerd.runtimes.runc.options\]/&\n SystemdCgroup = true/' | tee /etc/containerd/config.toml >/dev/null <*@ \Reactivatenumber @*>
+$ service containerd restart
 \end{lstlisting}
 
-\subsection{Creating the worker node}
-% Prereqs: Hyper-V,  Containers, crictl
-On the Windows worker node, the prerequisites were installed first. While installing the prerequisite \tcode{crictl} it is added to the \tcode{PATH} environment variable. After the setup, the node preparation scripts of the \ac{K8s} \ac{SIG} are retrieved. Before running the scripts, the \ac{CNI} version needs to be aligned to the same version running on the master node. Therefore the appearances of "v0.2.0" is replaced with "v0.3.0" respectively.
+To finally start the cluster, the packages for the Kubelet service, \enquote{kubeadm} and \enquote{kubectl} need to be installed. Then, the cluster can be initialized by running the command line tool as shown in \autoref{lst:master.kubeadm.init}. Since the configuration parameters can also be passed as YAML file, this is the preferred method of passing arguments and allows version control of the required configuration.
+\begin{lstlisting}[label=lst:master.kubeadm.init, caption={Bash command for setting up the cluster}, morekeywords={sudo, kubeadm}, numbers=none]
+$ kubeadm init --config kubeadm_config.yaml
+\end{lstlisting}
+
+Since Flannel is used as network overlay, the \ac{IP} address range provided for pods must be \enquote{10.244.0.0/16}\cite{GitHubKubernetesSIGWindowsTools.20230213}. Additionally, a value is provided that sets the \ac{CRI} socket address for newly registered nodes to the one of ContainerD. Furthermore, the \ac{cgroup} driver for the Kubelet service on worker nodes is set to SystemD. Thus, the \ac{cgroup} driver on Linux worker nodes should be aligned to the master node.
+The information passed as configuration is presented in \autoref{lst:master.kubeadm.config}.
+\begin{lstlisting}[label=lst:master.kubeadm.config, caption={YAML configuration for providing configuration for the cluster and newly registered ndoes. (\textit{Distribution/Controlplane/kubeadm\_config.yaml})}, language=yaml]
+kind: ClusterConfiguration
+apiVersion: kubeadm.k8s.io/v1beta3
+kubernetesVersion: v1.25.3
+networking:
+  podSubnet: "10.244.0.0/16" # pod-network-cidr
+---
+kind: InitConfiguration
+apiVersion: kubeadm.k8s.io/v1beta3
+nodeRegistration:
+  criSocket: unix:///var/run/containerd/containerd.sock
+---
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd
+\end{lstlisting}
+
+
+\subsubsection{Applying a Container Network Interface}
+After successfully initializing the cluster, the overlay network for Flannel must be set up.
+For this, the respective entity description can be directly downloaded from the vendor\footnote{Flannel entity description: \href{https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml}{https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml}}. Since networking has to blend with Flannel on \ac{Windows}, the \ac{VNI} (4096) and port (4789) for Flannel on \ac{Windows} must be set as part of the configuration. For this, manual editing of the description must be performed. The respective values are added to the configuration map section where the network configuration file is described. This file is automatically created on newly registered nodes. The changed entity description is applied on the cluster respectively.
+
+% After linking "kubectl" to the local control plane node, the successful setup of the cluster can be checked with the \tcode{kubectl} command.
+
+
+\subsubsection{Adding the proxy daemon sets}
+The usage of \ac{Windows} worker nodes in a \ac{K8s} cluster requires additional configuration mappings and daemon sets to be applied on the cluster. Those are used for setting up a proxy for Flannel. The \ac{SIG} \enquote{Windows Tools} of \ac{K8s} provides the additional objects\cite{GitHubKubernetesSIGWindowsTools.20230213}. Before applying them a replacement of the \ac{K8s} version is performed. This procedure is achieved running the two commands shown in \autoref{lst:master.proxy_daemonsets}. 
+\begin{lstlisting}[label=lst:master.proxy_daemonsets, caption={Bash command for adding the flannel overlay configuration\cite{GitHubKubernetesSIGWindowsTools.20230213}}, language=bash]
+$ curl -L https://github.com/kubernetes-sigs/sig-windows-tools/releases/latest \<*@ \Suppressnumber @*>
+  /download/kube-proxy.yml | sed 's/VERSION/v1.25.3/g' | kubectl apply -f -<*@ \Reactivatenumber @*>
+$ kubectl apply -f https://github.com/kubernetes-sigs/sig-windows-tools/releases \<*@ \Suppressnumber @*>
+  /latest/download/flannel-overlay.yml<*@ \Reactivatenumber @*>
+\end{lstlisting}
+
+
+\subsection{Setting up the worker node}
+The initialization of the worker node is mainly oriented on the guide for adding \ac{Windows} nodes that is provided from the \ac{SIG} \enquote{Windows Tools} on GitHub\cite{GitHubKubernetesSIGWindowsTools.20230213}. Although there is an original guide from \ac{K8s}\cite{Kubernetes.20220419}, it was not used as basis because it is outdated.
+
+First, the node preparation scripts of the \ac{K8s} \ac{SIG} \enquote{Windows Tools} are retrieved and executed as shown in \autoref{lst:worker.sig_scripts}. The first script retrieved (\textit{Install-Containerd.ps1}) installs ContainerD and its prerequisites on \ac{Windows}. Installation of the prerequisites involves the Windows features \enquote{Hyper-V}, \enquote{Hyper-V Tools}, \enquote{Hyper-V for PowerShell} and \enquote{Containers}. Once the features are installed and the system has successfully rebooted, the script proceeds by downloading the binary of ContainerD and adding its location to the \tcode{PATH} environment variable. ContainerD's configuration file is changed to align the \ac{CNI} file locations with \ac{K8s}. The script ends by registering ContainerD as a service.
+
+The second script (\textit{PrepareNode.ps1}) prepares the node for joining the cluster. It first downloads the Kubelet executable and creates a script file that is called by the Kubelet service. The created script file contains runs the Kubelet in consideration of version dependent command arguments. Afterwards, the \ac{NSSM}\footnote{NSSM: https://nssm.cc/} is downloaded and the Kubelet service is created.
+
+Furthermore the command line tools \enquote{kubectl}, \enquote{kubeadm}, \enquote{crictl} and \enquote{nerdctl} are installed. While installing \enquote{crictl}, it is added to the \tcode{PATH} environment variable.
+
+\begin{lstlisting}[label=lst:worker.sig_scripts, caption={Retrieval of node preparation scripts\cite{GitHubKubernetesSIGWindowsTools.20230213}}, language=PowerShell, morekeywords={curl.exe, Install-Containerd.ps1, PrepareNode.ps1}]
+> curl.exe -LO https://raw.githubusercontent.com/kubernetes-sigs/sig-windows-tools/master/kubeadm/scripts/Install-Containerd.ps1
+> .\<*@\textbf{Install-Containerd.ps1}@*>
+> curl.exe -LO https://raw.githubusercontent.com/kubernetes-sigs/sig-windows-tools/master/kubeadm/scripts/Prepare<*@\kern.7pt@*>Node.ps1
+> .\PrepareNode.ps1 -KubernetesVersion v1.25.3
+\end{lstlisting}
+
 Afterwards, the installation script is executed. It sets up the \ac{NAT} configuration on the worker node and registers ContainerD as a service.
 % [plugins."io.containerd.grpc.v1.cri"].sandbox_image
-For having a valid image at a later point in time, the \ac{CRI} value "sandbox\_image" in ContainerD's configuration file (\textit{config.toml}) needs to be replaced with a newer version.
+For having a valid image at a later point in time, the \ac{CRI} value \tcode{sandbox\_image} in ContainerD's configuration file (\textit{config.toml}) needs to be replaced with a newer version.
 
-After successfully setting up the \ac{NAT} and installing ContainerD as a service, the node will be finally prepared to host tasks. For this, another Powershell script "PrepareNode"\footnote{https://github.com/kubernetes-sigs/sig-windows-tools/releases/download/v0.1.5/PrepareNode.ps1} from the Kubernetes \ac{SIG} runs. After running the script, the resulting "StartKubelet" file needs to be changed to drop invalid arguments.
+After successfully setting up the \ac{NAT} and installing ContainerD as a service, the node will be finally prepared to host tasks. For this, another Powershell script \enquote{PrepareNode}\footnote{https://github.com/kubernetes-sigs/sig-windows-tools/releases/download/v0.1.5/PrepareNode.ps1} from the Kubernetes \ac{SIG} runs. After running the script, the resulting \enquote{StartKubelet} file needs to be changed to drop invalid arguments.
 
 % C:\k\kubelet.exe $global:KubeletArgs --cert-dir=$env:SYSTEMDRIVE\var\lib\kubelet\pki --config=/var/lib/kubelet/config.yaml --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --hostname-override=$(hostname)
 Furthermore, the following lines were added to the Kubelet configuration:

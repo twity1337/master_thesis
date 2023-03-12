@@ -5,6 +5,8 @@
 \RequirePackage{listings}
 
 
+\newcommand{\LstListingCommentStyle}{\itshape\color[gray]{0.4}\ttfamily}
+
 % ========================= CMD =========================
 \lstdefinelanguage{cmd}{
 	morekeywords={
@@ -31,6 +33,7 @@
 	},
 	morekeywords={Do,Else,For,ForEach,Function,If,In,Until,While},
 	alsodigit={-},
+	alsodigit={.},
 	sensitive=false,
 	morecomment=[l]{\#},
 	morecomment=[n]{<\#}{\#>},
@@ -47,7 +50,7 @@
   sensitive%
 , morecomment=[l]{//}%
 , morecomment=[s]{/*}{*/}%
-, moredelim=[s][{\itshape\color[rgb]{0,0,0.75}}]{\#[}{]}%
+, moredelim=[s][\LstListingCommentStyle]{\#[}{]}%
 , morestring=[b]{"}%
 , alsodigit={}%
 , alsoother={}%
@@ -123,7 +126,7 @@
   identifierstyle=\color{black},
   sensitive=false,
   comment=[l]{\#},
-  commentstyle=\itshape\color[rgb]{0,0,0.75}\ttfamily,
+  commentstyle=\LstListingCommentStyle\ttfamily,
   stringstyle=\ttfamily,
   morestring=[b]',
   morestring=[b]"
@@ -135,7 +138,7 @@
   identifierstyle=\color{black},
   sensitive=false,
   comment=[l]{\#},
-  commentstyle=\itshape\color[rgb]{0,0,0.75}\ttfamily,
+  commentstyle=\LstListingCommentStyle,
   stringstyle=\ttfamily,
   morestring=[b]',
   morestring=[b]"
@@ -148,8 +151,42 @@
   identifierstyle=\color{black},
   sensitive=false,
   comment=[l]{\#},
-  commentstyle=\itshape\color[rgb]{0,0,0.75}\ttfamily,
+  commentstyle=\LstListingCommentStyle,
   stringstyle=\ttfamily,
   morestring=[b]',
   morestring=[b]"
+}
+
+
+
+% ========================= BASH =========================
+\lstdefinelanguage{bash}{
+  keywords={echo, sed, exit, curl, cat, systemctl, tee, service, kubectl},
+  literate =  {\&\&}{{\llap{\color[gray]{0.7}\mdseries-{-}-}}}3
+			  {>}{{\bfseries\textgreater}}1     
+			  {|}{{\bfseries\textbar}}1 
+			  {<<}{{\bfseries\textless\textless}}3,
+}
+
+
+
+% ========================= YAML =========================
+\lstdefinelanguage{yaml}{
+  keywords={true,false,null,y,n},
+  keywordstyle=\bfseries,
+  basicstyle=\footnotesize\color{black}\bfseries\ttfamily,
+  sensitive=false,
+  comment=[l]{\#},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\LstListingCommentStyle,
+  stringstyle=\mdseries,
+  moredelim=[l][]{\&},
+  moredelim=[l][]{*},
+  moredelim=**[il][\mdseries{:}\mdseries]{:},
+  morestring=[b]',
+  morestring=[b]",
+  literate =    {---}{{{\color[gray]{0.6}\mdseries-{-}-}}}3
+                {>}{{\textcolor{black}\textgreater}}1     
+                {|}{{\textcolor{black}\textbar}}1 
+                {\ -\ }{{\mdseries\ -\ }}3,
 }
