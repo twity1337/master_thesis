@@ -5,10 +5,10 @@
 
 \lhead{Chapter \ref*{chap:results}. \emph{Results}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
 
-The development of the \ac{K8s} cluster and the containerization of \ac{OT} hides several pitfalls. These are discussed in this chapter.
+The development of the \ac{K8s} cluster and the containerization of \ac{OT} hides several pitfalls. The results are discussed in this chapter.
 
 \section{Containerization}
-The issues that require consideration during the containerization of the application are discussed in this section.
+Issues occurred during the containerization of the application. This involves pitfalls with the development of the container images and the special cases with the new \ac{Windows} host-process container technology. The required considerations are discussed in this section.
 
 \subsection{Container manifest}
 Even though the format of the container manifests "Containerfile" is compatible to the proprietary "Dockerfile" format from Docker, the \acp{CRI} do not follow the specification everywhere\cite. This was an issue while writing a Containerfile for the ContainerD \ac{CRI}. Especially in cases where line breaks in the Containerfile were necessary to shorten long lines and increase readability. ContainerD is treating line breaks paths in string notation different compared to paths in JSON array notation and is not following the specification\cite{ManKier.20230222}.
@@ -25,8 +25,6 @@ ENTRYPOINT ["open_twin.exe",
 
 \subsection{Windows Base Image}
 While it is normal to have a requirement for the same operating system kernel when running container images, it is a uncommon requirement to have the exact same build version.
-
-- Windows base image has to have same build number than host computer (not the same in linux containers)
 
 - OpenTwin needs to be compiled on the system it is running. Developers need to fix this issue.
 
@@ -55,7 +53,7 @@ To automate this process for a batch of container files, a powershell script was
 - K8s Documentation redirects to a different page when searching for tutorial for adding windows nodes
 - Error messages of Windows hcs shim are not explanatory
 
-- Windows needs to have certain Update installed to run flannel container
+- Windows needs to have certain Update installed to run flannel container (KB4489899)
 
 - Windows base image has to have same build number than host computer (not the same in linux containers)
 

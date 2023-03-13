@@ -152,7 +152,7 @@
         keywordstyle=\color{blue},
         commentstyle=\color[rgb]{0.13,0.55,0.13}\em,
         stringstyle=\color[rgb]{0.7,0,0} }
-\def\tcode#1{\texttt{\normalsize{#1}}}
+\def\tcode#1{\enquote{\texttt{\normalsize{#1}}}}
 
 \usepackage[pdfpagemode={UseOutlines},bookmarks=true,bookmarksopen=true,
    bookmarksopenlevel=0,bookmarksnumbered=true,hypertexnames=false,

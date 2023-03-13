@@ -54,7 +54,7 @@ Deployments are used to define declarative states for Pods. This allows to maint
 	\label{fig.kubernetes-architecture}
 \end{figure}
 
-In the following paragraphs, the crucial services are described in detail. Since every service is a pod, they can have multiple replicas. Only the core service have to run on a dedicated Linux node the so called \enquote{control plane node}. The underlying operating system must be Linux, because \ac{Windows} is not supported as control plane. The other services can run on nodes (with any operating system) for executing the applications and perform computations (\enquote{compute node}).
+In the following paragraphs, the crucial services are described in detail. Since every service is a pod, they can have multiple replicas. Only the core service have to run on a dedicated Linux node the so called \enquote{control plane node} or \enquote{master node}. The underlying operating system must be Linux, because \ac{Windows} is not supported as control plane. The other services can run on nodes (with any operating system) for executing the applications and perform computations (\enquote{compute node} or \enquote{worker node}).
 
 \paragraph*{etcd}
 The etcd\footnote{etcd: https://etcd.io/} database server is a key-value store designed for distributed systems\cite{Luksa.2018}. That means it could run with multiple replications and would still be able to keep a persistent storage synchronized across multiple instances. It contains the applied configuration of several cluster entities (e.g. User configurations, deployments, pod configurations).

@@ -234,12 +234,16 @@ For this, the respective entity description can be directly downloaded from the 
 
 
 \subsubsection{Adding the proxy daemon sets}
-The usage of \ac{Windows} worker nodes in a \ac{K8s} cluster requires additional configuration mappings and daemon sets to be applied on the cluster. Those are used for setting up a proxy for Flannel. The \ac{SIG} \enquote{Windows Tools} of \ac{K8s} provides the additional objects\cite{GitHubKubernetesSIGWindowsTools.20230213}. Before applying them a replacement of the \ac{K8s} version is performed. This procedure is achieved running the two commands shown in \autoref{lst:master.proxy_daemonsets}. 
+The usage of \ac{Windows} worker nodes in a \ac{K8s} cluster requires additional configuration mappings and daemon sets to be applied on the cluster. Those are used for setting up a proxy for Flannel. The \ac{SIG} \enquote{Windows Tools} of \ac{K8s} provides the additional objects\cite{GitHubKubernetesSIGWindowsTools.20230213}. Before applying them a replacement of the \ac{K8s} version and the Flannel version is performed. This procedure is achieved by running the two commands shown in \autoref{lst:master.proxy_daemonsets}. 
 \begin{lstlisting}[label=lst:master.proxy_daemonsets, caption={Bash command for adding the flannel overlay configuration\cite{GitHubKubernetesSIGWindowsTools.20230213}}, language=bash]
-$ curl -L https://github.com/kubernetes-sigs/sig-windows-tools/releases/latest \<*@ \Suppressnumber @*>
-  /download/kube-proxy.yml | sed 's/VERSION/v1.25.3/g' | kubectl apply -f -<*@ \Reactivatenumber @*>
-$ kubectl apply -f https://github.com/kubernetes-sigs/sig-windows-tools/releases \<*@ \Suppressnumber @*>
-  /latest/download/flannel-overlay.yml<*@ \Reactivatenumber @*>
+$ curl -L https://raw.githubusercontent.com/kubernetes-sigs/sig-windows-tools/master \<*@ \Suppressnumber @*>
+  /hostprocess/flannel/kube-proxy/kube-proxy.yml | 
+  sed 's/KUBE_PROXY_VERSION/v1.25.3/g' | 
+  kubectl apply -f -<*@ \Reactivatenumber @*>
+$ curl -L https://raw.githubusercontent.com/kubernetes-sigs/sig-windows-tools/master \<*@ \Suppressnumber @*>
+  /hostprocess/flannel/flanneld/flannel-overlay.yml | 
+  sed 's/FLANNEL_VERSION/v0.17.0/g' | 
+  kubectl apply -f -<*@ \Reactivatenumber @*>
 \end{lstlisting}
 
 
@@ -248,7 +252,7 @@ The initialization of the worker node is mainly oriented on the guide for adding
 
 First, the node preparation scripts of the \ac{K8s} \ac{SIG} \enquote{Windows Tools} are retrieved and executed as shown in \autoref{lst:worker.sig_scripts}. The first script retrieved (\textit{Install-Containerd.ps1}) installs ContainerD and its prerequisites on \ac{Windows}. Installation of the prerequisites involves the Windows features \enquote{Hyper-V}, \enquote{Hyper-V Tools}, \enquote{Hyper-V for PowerShell} and \enquote{Containers}. Once the features are installed and the system has successfully rebooted, the script proceeds by downloading the binary of ContainerD and adding its location to the \tcode{PATH} environment variable. ContainerD's configuration file is changed to align the \ac{CNI} file locations with \ac{K8s}. The script ends by registering ContainerD as a service.
 
-The second script (\textit{PrepareNode.ps1}) prepares the node for joining the cluster. It first downloads the Kubelet executable and creates a script file that is called by the Kubelet service. The created script file contains runs the Kubelet in consideration of version dependent command arguments. Afterwards, the \ac{NSSM}\footnote{NSSM: https://nssm.cc/} is downloaded and the Kubelet service is created.
+The second script (\textit{PrepareNode.ps1}) prepares the node for joining the cluster. It first downloads the Kubelet executable and creates a script file that is called by the Kubelet service. The created script file contains runs the Kubelet in consideration of version dependent command arguments. Afterwards, the \ac{NSSM}\footnote{NSSM: https://nssm.cc/} is downloaded and the Kubelet script is registered as a service. Finally, the \textit{PrepareNode} script also sets up firewall rules for Kubelet.
 
 Furthermore the command line tools \enquote{kubectl}, \enquote{kubeadm}, \enquote{crictl} and \enquote{nerdctl} are installed. While installing \enquote{crictl}, it is added to the \tcode{PATH} environment variable.
 
@@ -259,31 +263,87 @@ Furthermore the command line tools \enquote{kubectl}, \enquote{kubeadm}, \enquot
 > .\PrepareNode.ps1 -KubernetesVersion v1.25.3
 \end{lstlisting}
 
-Afterwards, the installation script is executed. It sets up the \ac{NAT} configuration on the worker node and registers ContainerD as a service.
-% [plugins."io.containerd.grpc.v1.cri"].sandbox_image
-For having a valid image at a later point in time, the \ac{CRI} value \tcode{sandbox\_image} in ContainerD's configuration file (\textit{config.toml}) needs to be replaced with a newer version.
+% \begin{comment}
+%service.
+%% [plugins."io.containerd.grpc.v1.cri"].sandbox_image
+%For having a valid image at a later point in time, the \ac{CRI} value \tcode{sandbox\_image} in ContainerD's configuration file (\textit{config.toml}) needs to be replaced with a newer version.
+%
+%After successfully setting up the \ac{NAT} and installing ContainerD as a service, the node will be finally prepared to host tasks. For this, another Powershell script \enquote{PrepareNode}\footnote{https://github.com/kubernetes-sigs/sig-windows-tools/releases/download/v0.1.5/PrepareNode.ps1} from the Kubernetes \ac{SIG} runs. After running the script, the resulting \enquote{StartKubelet} file needs to be changed to drop invalid arguments.
+%
+%% C:\k\kubelet.exe $global:KubeletArgs --cert-dir=$env:SYSTEMDRIVE\var\lib\kubelet\pki --config=/var/lib/kubelet/config.yaml --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --hostname-override=$(hostname)
+%Furthermore, the following lines were added to the Kubelet configuration:
+%\begin{lstlisting}[label=lst:master.configtoml_changes, caption={Configuration changes in ContainerD configuration file (\textit{config.toml})\cite{GitHubKubernetesSIGWindowsTools.20230213}}]
+%enforceNodeAllocatable: []
+%cgroupsPerQOS: false
+%enableDebuggingHandlers: true
+%\end{lstlisting}
+%These configuration values are valid for \ac{Windows} machines only and cause an error in Kubelet on Linux. The configuration changes therefore can only be served to Windows machines and the configuration on the nodes needs to be changed locally.
+%\end{comment}
 
-After successfully setting up the \ac{NAT} and installing ContainerD as a service, the node will be finally prepared to host tasks. For this, another Powershell script \enquote{PrepareNode}\footnote{https://github.com/kubernetes-sigs/sig-windows-tools/releases/download/v0.1.5/PrepareNode.ps1} from the Kubernetes \ac{SIG} runs. After running the script, the resulting \enquote{StartKubelet} file needs to be changed to drop invalid arguments.
-
-% C:\k\kubelet.exe $global:KubeletArgs --cert-dir=$env:SYSTEMDRIVE\var\lib\kubelet\pki --config=/var/lib/kubelet/config.yaml --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --hostname-override=$(hostname)
-Furthermore, the following lines were added to the Kubelet configuration:
-\begin{lstlisting}[label=lst:master.configtoml_changes, caption={Configuration changes in ContainerD configuration file (\textit{config.toml})\cite{GitHubKubernetesSIGWindowsTools.20230213}}]
-enforceNodeAllocatable: []
-cgroupsPerQOS: false
-enableDebuggingHandlers: true
-\end{lstlisting}
-These configuration values are valid for \ac{Windows} machines only and cause an error in Kubelet on Linux. The configuration changes therefore can only be served to Windows machines and the configuration on the nodes needs to be changed locally.
 
 % Es wurde "New-HnsNetwork -Type NAT -Name nat -Gateway 10.244.0.1 -AdressPrefix 10.244.240.0/20" ausgeführt
 % TODO: Evtl. testen, ob man mit Docker auf Netzwerk zugreifen kann? "Object already exists"
-% TODO: Evtl.- auf calico wechseln? Oder worker node als hostprocess ausführen
 % TODO: -- siehe: https://github.com/kubernetes-sigs/sig-windows-tools/issues/128
 
-After successful run of the preparation script the node is ready to join the cluster.
+After successfully running the preparation script the node should be ready to join the cluster. For joining the cluster a token is generated on the master node. The token is copied to the preapared node and used as part of a \enquote{join} command. \autoref{lst:worker.join} shows the command for joining the cluster, whereas the token is substituted by \enquote{TOKEN}.
+\begin{lstlisting}[label=lst:worker.join, caption={Command for joining new nodes on Windows}, language=PowerShell, morekeywords={kubeadm.exe}]
+> kubeadm.exe join 1.2.3.4:6443 --token TOKEN --discovery-token-ca-cert-hash sha256:HASH \<*@ \Suppressnumber @*>
+  --cri-socket "npipe:////./pipe/containerd-containerd"<*@ \Reactivatenumber @*>
+\end{lstlisting}
+Besides containing the token and the master node's \ac{IP} address, the command also has the hash value of the \ac{CA} of the master node. For \ac{K8s} versions 1.25 and below the command also requires the explicit declaration of ContainerD as container runtime. Thus, the additional option \tcode{cri-socket} is defined.
+
+The successful join of the node is verified by running \tcode{kubectl get nodes} on the master node. This prints the newly added node.
+
+\vspace{-.5em}
+\subsection{Deployment of the application}\vspace{-.5em}
+As a first draft, only the \ac{LSS} of the application is deployed. 
+Deployment of the application is done by applying the manifest as shown in \autoref{lst:deploy.yaml}.
+The manifest defines a pod using the container image of the \ac{LSS} (lines 2-4). Since the images are not yet provided via an image registry, the images are stored locally. Thus, the \ac{K8s} is directed to never pull the image and retrieve it locally instead.
+The passed environment variables (lines 5-13) are defined by the section \tcode{env} section, whereas the variable \tcode{OPEN\_TWIN\_LSS\_SERVICE\_ADDRESS} is set with the \ac{IP} address of the pod. The external port is defined as 8093, which is equivalent to the port of the \ac{LSS}.
+The node selector property (lines 16-17) defines a requirement for the node scheduler to select only \ac{Windows} nodes.
+The manifest is applied on the cluster using \tcode{kubectl apply}.
+\begin{lstlisting}[label=lst:deploy.yaml, caption={Partial section of configuration for cluster deployment of the \ac{LSS} (\textit{Distribution/Kubernetes/open\_twin.yaml})}, language=yaml]
+containers:
+- name: opentwin-session
+  image: local.dev/opentwin-session:latest
+  imagePullPolicy: Never
+  env:
+    - name: OPEN_TWIN_LSS_SERVICE_ADDRESS
+      valueFrom:
+        fieldRef:
+          fieldPath: status.podIP
+    - name: OPEN_TWIN_MONGODB_ADDRESS
+      value: 1.2.3.4:27017
+    - name: OPEN_TWIN_GSS_SERVICE_ADDRESS
+      value: 5.6.7.8
+  ports:
+  - containerPort: 8093
+nodeSelector:
+  kubernetes.io/os: windows
+\end{lstlisting}
 
 
 \section{Automatic setup}
 % TODO: Powershell script beschreiben
+Even though the scripts provided from the \ac{SIG} \enquote{Windows Tools} cover most of the preparation steps, some manual steps are still required as described in the respective guide\cite{GitHubKubernetesSIGWindowsTools.20230213}. To automate the manual steps where possible, and to also provide tools for debugging error cases, further steps are required. Thus, a custom script (\textit{Distribution/Container/setup-node.ps1}) was created to provide this aid.
 
+The script automates the process of rebooting and rerunning the preparation after the required \ac{Windows} features are installed, and provides instructions for steps that cannot be automated. It also checks the prerequisites before performing any action. This means, it is checked whether the operating system is \enquote{\ac{Windows} Server} and if a certain minimum version of \ac{Windows} is used. The check for prerequisites is shown in \autoref{lst:auto.check_preq}.
+\begin{lstlisting}[label=lst:auto.check_preq, caption={Powershell commands in the automated setup script. Checks for prerequisites.}, language=PowerShell]
+if (-not ((Get-ComputerInfo).WindowsProductName | Select-String "Server")) {
+  throw "Prerequisites not met. Windows Server is required as operating system."
+}
+if (-not (Get-Hotfix -ErrorAction Ignore KB4489899)) {
+  if (-not ([System.Environment]::OSVersion.Version -gt [System.Version]"10.0.17763.0")) {
+    throw "Prerequisites not met. You either need KB4489899 installed, or a Windows Version higher than 10.0.17763"
+  }
+}
+\end{lstlisting}
+
+Besides checking for system requirements, the custom script also installs tools for debugging. This includes the \ac{Windows} version of \enquote{kubeadm} and \enquote{kubectl}, as well as the command line tools for debugging containers on \ac{Windows}, namely \enquote{crictl} and \enquote{nerdctl}.
+Furthermore, the custom script also excludes the ContainerD process from the \ac{Windows} Defender firewall as shown in \autoref{lst:auto.win_defender}. This increases the pull and general runtime performance of containers.
+The installation of the command line tools also involves setting up PowerShell auto completion and include to the \tcode{PATH} environment variable.
+\begin{lstlisting}[label=lst:auto.win_defender, caption={Powershell command in the automated setup script. Exclusion of all actions performed by containerd.exe from Windows Defender.}, language=PowerShell, numbers=none]
+Add-MpPreference -ExclusionProcess "$Env:ProgramFiles\containerd\containerd.exe"
+\end{lstlisting}
 
 
