@@ -103,7 +103,7 @@ The binding address is separated from the published address, since the address i
 
 \subsection{Container definition}
 There are currently three container images prepared for containerization of \ac{OT}. These cover the main services for \ac{GSS}, \ac{LSS} and \ac{AUTH}. The structure is the same for each of the container files. The first part of the container file is shown in \autoref{lst:containerfile.1}.
-\begin{lstlisting}[label=lst:containerfile.1, caption={Containerfile for the \ac{GSS}. Description of the base image and variable tagging using a build argument. (\textit{Distribution/Container/globalsession.Containerfile})}, language=docker, firstnumber=1]
+\begin{lstlisting}[label=lst:containerfile.1, caption={Containerfile for the \ac{LSS}. Description of the base image and variable tagging using a build argument. (\textit{Distribution/Container/session.Containerfile})}, language=docker, firstnumber=1]
 ARG BASE_IMAGE_TAG=ltsc2022
 FROM mcr.microsoft.com/windows/servercore:$BASE_IMAGE_TAG
 \end{lstlisting}
@@ -131,19 +131,21 @@ OPEN_TWIN_LDS_PORT=9095
 \end{lstlisting}
 \end{comment}
 
+\autoref{lst:containerfile.3} shows the lower section of the container file for containerizing the \ac{LSS}.
 The container files differ in the runtime specification. They run the same entry point, but have a different process running as command. Besides, the exposed port depends on the service inside the container. 
-After defining the command and copying the files into the container image, the certificates are built as part of the image file system. The discussed section of the container file can be seen in \autoref{lst:containerfile.3}.
-\begin{lstlisting}[label=lst:containerfile.3, caption={Containerfile for the \ac{GSS}. Description of the command line and certificate creation. (\textit{Distribution/Container/globalsession.Containerfile})}, language=docker, firstnumber=21]
+After defining the command and copying the files into the container image (lines 22-28), the certificates are built as part of the image file system (line 29). Since the compute services are dependent to C++ libraries that are not present in the base image, the Microsoft Visual C++ Redistributable is installed (line 31).
+\begin{lstlisting}[label=lst:containerfile.3, caption={Containerfile for the \ac{GSS}. Description of the command line and certificate creation. (\textit{Distribution/Container/session.Containerfile})}, language=docker, firstnumber=21]
 ENTRYPOINT ["cmd", "/C"]
-CMD ["open_twin.exe", "GlobalSessionService.dll", "0", \
+CMD ["open_twin.exe", "SessionService.dll", "0", \
+"%OPEN_TWIN_LSS_SERVICE_ADDRESS%:%OPEN_TWIN_LSS_PORT%", \
 "%OPEN_TWIN_GSS_SERVICE_ADDRESS%:%OPEN_TWIN_GSS_PORT%", \
-"%OPEN_TWIN_MONGODB_ADDRESS%", \
-"%OPEN_TWIN_AUTH_SERVICE_ADDRESS%:%OPEN_TWIN_AUTH_PORT%"]
-EXPOSE 8091
+"%OPEN_TWIN_AUTH_PORT%"]
+EXPOSE 8093
 WORKDIR C:/app/Deployment/Certificates
 COPY ./ ../
 RUN createCertificate.bat && certutil -addstore root %OPEN_TWIN_CA_CERT%
 WORKDIR C:/app/Deployment
+RUN C:\app\Deployment\VC_Redist\VC_redist.x64.exe /install /quiet
 \end{lstlisting}
 
 % Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host operating system.
@@ -247,7 +249,7 @@ $ curl -L https://raw.githubusercontent.com/kubernetes-sigs/sig-windows-tools/ma
 \end{lstlisting}
 
 
-\subsection{Setting up the worker node}
+\subsection{Setting up the worker node}\label{chap:implementation.setup_worker}
 The initialization of the worker node is mainly oriented on the guide for adding \ac{Windows} nodes that is provided from the \ac{SIG} \enquote{Windows Tools} on GitHub\cite{GitHubKubernetesSIGWindowsTools.20230213}. Although there is an original guide from \ac{K8s}\cite{Kubernetes.20220419}, it was not used as basis because it is outdated.
 
 First, the node preparation scripts of the \ac{K8s} \ac{SIG} \enquote{Windows Tools} are retrieved and executed as shown in \autoref{lst:worker.sig_scripts}. The first script retrieved (\textit{Install-Containerd.ps1}) installs ContainerD and its prerequisites on \ac{Windows}. Installation of the prerequisites involves the Windows features \enquote{Hyper-V}, \enquote{Hyper-V Tools}, \enquote{Hyper-V for PowerShell} and \enquote{Containers}. Once the features are installed and the system has successfully rebooted, the script proceeds by downloading the binary of ContainerD and adding its location to the \tcode{PATH} environment variable. ContainerD's configuration file is changed to align the \ac{CNI} file locations with \ac{K8s}. The script ends by registering ContainerD as a service.
@@ -294,8 +296,7 @@ Besides containing the token and the master node's \ac{IP} address, the command 
 
 The successful join of the node is verified by running \tcode{kubectl get nodes} on the master node. This prints the newly added node.
 
-\vspace{-.5em}
-\subsection{Deployment of the application}\vspace{-.5em}
+\subsection{Deployment of the application}
 As a first draft, only the \ac{LSS} of the application is deployed. 
 Deployment of the application is done by applying the manifest as shown in \autoref{lst:deploy.yaml}.
 The manifest defines a pod using the container image of the \ac{LSS} (lines 2-4). Since the images are not yet provided via an image registry, the images are stored locally. Thus, the \ac{K8s} is directed to never pull the image and retrieve it locally instead.

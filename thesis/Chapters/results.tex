@@ -10,13 +10,13 @@ The development of the \ac{K8s} cluster and the containerization of \ac{OT} hide
 \section{Containerization}
 Issues occurred during the containerization of the application. This involves pitfalls with the development of the container images and the special cases with the new \ac{Windows} host-process container technology. The required considerations are discussed in this section.
 
-\subsection{Container manifest}
+\subsection{Container manifest}\label{chap:results.container_manifest}
 Even though the format of the container manifests "Containerfile" is compatible to the proprietary "Dockerfile" format from Docker, the \acp{CRI} do not follow the specification everywhere\cite. This was an issue while writing a Containerfile for the ContainerD \ac{CRI}. Especially in cases where line breaks in the Containerfile were necessary to shorten long lines and increase readability. ContainerD is treating line breaks paths in string notation different compared to paths in JSON array notation and is not following the specification\cite{ManKier.20230222}.
 \begin{lstlisting}[caption={Containerfile entrypoint specification across multiple lines in text format.}, label=lst:results.containerfile-entrypoint.text]
 ENTRYPOINT open_twin.exe \
 Service.dll
 \end{lstlisting}
-\autoref{lst:results.containerfile-entrypoint.text} shows an example of the problem. While the entry point in Docker is interpreted as \textit{open\_twin.exe Service.dll}, the interpreter in ContainerD only reads the first line as entry point and ignores the line break character "\" as in \textit{open\_twin.exe}. This causes troubles during build and execution of a container image. The container image is built in Docker, whereas it does not run in ContainerD. Since, ContainerD on \ac{Windows} cannot build container images, it does also not work the other way around. To overcome this flaw, the \textit{ENTRYPOINT} definition has to be written in JSON notation. If defined as in \autoref{lst:results.containerfile-entrypoint.json} the interpreter 
+\autoref{lst:results.containerfile-entrypoint.text} shows an example of the problem. While the entry point in Docker is interpreted as \tcode{open\_twin.exe Service.dll}, the interpreter in ContainerD only reads the first line as entry point and ignores the line break character "\textbackslash". Therefore it results in just \tcode{open\_twin.exe} as interpreted entry point. This causes troubles during build and execution of a container image. The container image is built in Docker, whereas it does not run in ContainerD. Since, ContainerD on \ac{Windows} cannot build container images, it does also not work the other way around. To overcome this flaw, the \textit{ENTRYPOINT} definition has to be written in JSON notation. If defined as in \autoref{lst:results.containerfile-entrypoint.json} the interpreter 
 \begin{lstlisting}[caption={Containerfile entrypoint specification across multiple lines in JSON format.}, label=lst:results.containerfile-entrypoint.json]
 ENTRYPOINT ["open_twin.exe", 
 "Service.dll"]
@@ -24,45 +24,83 @@ ENTRYPOINT ["open_twin.exe",
 
 
 \subsection{Windows Base Image}
-While it is normal to have a requirement for the same operating system kernel when running container images, it is a uncommon requirement to have the exact same build version.
+Container images must have the same operating system as basis for their processes. Compared to virtualization this reduces the isolation on the one hand, but improves performance on the other.
+It is a requirement to have the same operating system kernel when running container images on Linux. However, on \ac{Windows} host-process isolation it is a requirement to have the exact same build version for the base image as for the host machine. This means, a container based on Windows Server 2019 (Version 10.0.17763.4010) cannot run on Windows Server 2022 (Version 10.0.20348.1547).
+The isolation that is built on Hyper-V virtualization does not have this requirement. 
+Microsoft provides several image tags (\enquote{ltsc2019}, \enquote{ltsc2022}, and so on) for different kinds of operating system versions\cite{MattbriggsMicrosoft.20230214,Microsoft.20230313}. They also offer one general image tag for multiple architectures. However, they do not offer a more generous tag having a broad version coverage, even though the \acp{CRI} would support it. Therefore the host operating system always has to match the container image tag.
 
-- OpenTwin needs to be compiled on the system it is running. Developers need to fix this issue.
+There are two different ways to solve this flaw of operating system inconsistency. One method is given by \ac{K8s}. \ac{K8s} supports filtering based on the build number of a node\cite{Brasmithms.20230313}. For this, a separate \tcode{nodeSelector} key is defined as shown in \autoref{lst:results.windows_build}.
+\begin{lstlisting}[caption={\ac{K8s} manifest with node selector for specific Windows build.}, label=lst:results.windows_build, language=yaml]
+nodeSelector:
+  "beta.kubernetes.io/os": windows
+  "beta.kubernetes.io/osbuild": "14393.1715"
+\end{lstlisting}
+A second method is to build different versions of one image and assign them the same tag. If rolled out via an image registry, the node would automatically retrieve the suitable architecture. Google showed that so called \enquote{multi-arch} images can also be created with multiple build versions\cite{Google.20230313}.
 
-
-% ----------------------------------------------------------------------------------------------------------
-
-
-X Containerfile support differs from Dockerfile: Path of ENTRYPOINT is not treated the same way.
-
-
-- Container namespace: If imported manually, image has to be shifted from default ns to k8s.io ns
-	- Container cannot be built on Windows in ContainerD /nerdctl - need to be build on docker first and then transferred
 
 \subsection{Local images namespace}
-If images are locally imported, they have to be in the ContainerD namespace "k8s.io" to get recognized by \ac{K8s}. However, if images are built with Docker, they are not recognized by ContainerD and additionally get the default namespace assigned. Altough, images pulled with \ac{K8s} from a image registry are getting imported correctly. The faulty namespace behavior cannot be changed during the image build.  Therefore, the change of the namespace is required for locally imported images on the one hand, and it requires a transferation of the image from the Docker environment to the ContainerD environemnt on the other hand.
+If images are locally imported, they have to be in the ContainerD namespace "k8s.io" to get recognized by \ac{K8s}. However, if images are built with Docker, they are not recognized by ContainerD and additionally get the default namespace assigned. Although, images pulled with \ac{K8s} from a image registry are getting imported correctly. The faulty namespace behavior cannot be changed during the image build. Therefore, the change of the namespace is required for locally imported images on the one hand, and it requires a transfer of the image from the Docker environment to the ContainerD environment on the other hand.
 Thus, the only solution to use local images without uploading them to a image registry, is by performing the following steps for each image:
 \begin{enumerate}
 	\item Building the image in Docker (using \texttt{docker build})
 	\item Exporting the image to an archive file (using \texttt{docker save})
 	\item Loading the image to ContainerD to correct namespace (using \texttt{ctr --namespace k8s.io image import})
 \end{enumerate}
-To automate this process for a batch of container files, a powershell script was created.
+Since the application images of \ac{OT} become very large (\~{}2.8 Gigabyte), the three steps taking about five minutes each. Depending on the amount of container images to process and the performance of the host computer, this consumes about half an hour.
+Therefore, to automate this process for a batch of container files, the PowerShell script \textit{build-image.ps1} has been created. The script reads Container files in a directory and afterwards performs the described steps on it as shown in \autoref{lst:results.image_namespace_build}.
+The defined variable \tcode{\$ContainerRegistry} is set to the address of the image registry for tagging the image. In this case, it is the stub domain \enquote{local.dev}. If an image is not tagged with a proper domain name, the \ac{CRI} is unable pull it and it cannot be found by \ac{K8s}.
+\tcode{\$BaseName} is the filename of the container file and therefore the name of the image. The created temporary file \textit{container.tar} after the script has finished.
+\begin{lstlisting}[caption={Crucial commands used in the custom PowerShell script to automate process of image building.}, label=lst:results.image_namespace_build, language=powershell, morekeywords={docker, ctr}]
+$containerfiles | ForEach-Object {
+  docker build -f "$($_)" -t "$($ContainerRegistry)/opentwin-$($_.BaseName):latest" \<*@ \Suppressnumber @*>
+    "..\..\Deployment\"<*@ \Reactivatenumber @*>
+  docker save "$($ContainerRegistry)/opentwin-$($_.BaseName):latest" -o container.tar
+  ctr --namespace k8s.io image import .\container.tar }
+\end{lstlisting}
+
+
+\section{Kubernetes}
+
+\subsection{System requirements}
+Because \ac{K8s} does not support containers based on Hyper-V isolation\cite{Kubernetes.20230227}, host-process containers must be used.
+For using host-process containers on \ac{Windows}, at least Windows Server in version 2019 with build number \enquote{17763.379} is required or the update \enquote{KB4489899} needs to be installed\cite{GitHubKubernetesSIGWindowsTools.20230213}. Furthermore, \ac{K8s} also has the fixed requirement of the usage of \enquote{Windows Server 2019} and above\cite{Kubernetes.20230227}. This reduces the subset of compatible node operating system. \ac{Windows} client machines are not able to host containers for the usage in \ac{K8s} and a minimum version is required.
+The update cannot be installed manually which means it is impossible to get support for \enquote{Windows 10} based systems that are not part of this group. In the business area, Microsoft sells major upgrades of Windows Server as separate product. That is why the necessity of upgrading to at least Windows Server Build 17763 can induce a higher expense.
+
+Additionally, there is the incompatibility with the control plane on \ac{Windows}. This requires an additional Linux node for running the \ac{K8s} control plane and hence is not conducive for a homogeneous system landscape. 
+
+\subsection{Documentation}
+The official documentation of \ac{K8s} is incomplete or outdated on some pages. There is partially work in progress and while consuming the documentation it is hard to detect if a specific article is applicable for the current version of \ac{K8s}.
+For example, this became fundamental on the page \enquote{Adding Windows nodes}\cite{Kubernetes.20220419}. At the current time being, the actual page is only available as an archived version for \ac{K8s} version \enquote{v1.23}. However, if the same \ac{URL} is called for the unarchived the user gets redirected to a similar page \enquote{Creating a cluster with kubeadm}\cite{Kubernetes.20221107}. Reading the page, people could assume that they can follow the steps described to add a \ac{Windows} node. However, the fact that the guide is aligned to Linux is only barely mentioned and thus is misleading.
+That also means that there is no guide for adding \ac{Windows} nodes in the current version of the documentation of \ac{K8s}.
+
+The guide for adding \ac{Windows} nodes provided from \ac{SIG} \enquote{Windows Tools}\cite{GitHubKubernetesSIGWindowsTools.20230213} has a more streamlined approach and benefits from provided PowerShell scripts, like \enquote{PrepareNode.ps1}. However, due to the small community, the guide still stays faulty or outdated. For example, the guide shows a warning, \enquote{The instructions and scripts in the directory DO NOT configure a CNI solution for Windows nodes running containerd. There is a work-in-progress PR to assist in this at \#239}\cite{GitHubKubernetesSIGWindowsTools.20230213}. However, the guide does explain how to configure a \ac{CNI} and the linked pull request is merged since December 2022.
+Furthermore, it reads \enquote{Do not forget to add --cri-socket [\dots] at the end of the join command, if you use ContainerD}\cite{GitHubKubernetesSIGWindowsTools.20230213}. The explicit appending of the \ac{CRI} socket however is not necessary for versions higher than \enquote{v1.25} as mentioned in \autoref{chap:implementation.setup_worker}.
+
+The guide from \ac{SIG} \enquote{Windows Tools} was still work in progress while the cluster was setup. A change in the documentation for applying a required daemon set on the cluster was only added after some time. Taking into account that Windows nodes are supported since over year, a functional documentation was expected.
+
+\section{Interfaces to other systems}
+\subsection{Version interoperability}
+The whole \ac{K8s} landscape consists of a huge amount of systems and third-party tools. This burdens the risk of version incompatibilities. 
+% This was identified while setting up the cluster and the \ac{CNI}.
+The versions of Flannel and the \ac{CNI} that are written in the manifest have to match the version installed on every node in the cluster (including the control plane). This induces the necessity of string replacements to hand in the correct versions and increases complexity.
+
+Another finding covers the fact that support for Docker was removed from \ac{K8s} before properly introducing the alternative ContainerD to not only Linux but also \ac{Windows}. The majority of guides that can be found online still stick to Docker as basis. Guides that cover specific cases with ContainerD are rare.
+This can also be seen on the missing build support for \ac{Windows} containers in ContainerD. Until now the container images have to be built in Docker and need to be shifted to ContainerD, because the required tools (\enquote{buildkit}) are not yet available for \ac{Windows}.
+
+\subsection{Error handling}
+The additional abstraction layer for the \ac{HCS} is loosing information in error cases. For example, in cases with an incorrect container image entry point as described in \autoref{chap:results.container_manifest} the error message returned to the \ac{K8s} control plane was \enquote{hcs::CreateComputeSystem session: The system cannot find the file specified.: unknown}. With no further arguments given, it is hard to break the issue down to the actual error.
+
+Furthermore, error cases on one \ac{Windows} version differ from the one on other versions. This has been found while setting up the \enquote{kube-proxy} pod with the exact same steps on Windows Server 2022 and Windows Server 2019. While the error message on 2019 is rather generic (\enquote{The directory name is invalid.}), the error message for 2022 is more explanatory (\enquote{IP address is either invalid or not part of any configured subnet(s)}).
+
+% - Cluster networking throws weird error messages when performed inside hyper-v vm ("Directory not found")
+Additionally, the error reporting of \ac{OT} itself can still be more improved. The logging mechanisms on \ac{OT} are still under development and thus logging is rare. If a service crashes it is tricky to reproduce the cause. Especially for the compute services the generated output does not contain useful information. Due to the fact that the console window stays not open after a crash, the output is hard to catch.
+In some cases throughout the code base exceptions are not caught or just swallowed, where it is better to treat them and return the exception message.
+Also, since Rust cannot catch foreign exceptions, they cannot be exchanged between the service \ac{DLL} and the main executable. This is why all exceptions should be fully treated inside the service \ac{DLL}. 
+
+
+\subsection{Database server}
+
+- TODO: MongoDB server container image cannot be initialized easily on Windows
 
 
 
-- K8s Documentation redirects to a different page when searching for tutorial for adding windows nodes
-- Error messages of Windows hcs shim are not explanatory
-
-- Windows needs to have certain Update installed to run flannel container (KB4489899)
-
-- Windows base image has to have same build number than host computer (not the same in linux containers)
-
-- Scripts and docs are maintained by a relatively small community (SIG windows tools)
-
-- Cluster networking throws weird error messages when performed inside hyper-v vm ("Directory not found")
-
-- Docker support was removed, containerd is not fully supported yet (without bugs) in Windows
-
-- OpenTwin needs to be compiled on the system it is running. Development team needs to fix this issue.
-
-- MongoDB server container image cannot be initialized easily on Windows
