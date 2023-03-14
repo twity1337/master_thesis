@@ -24,10 +24,10 @@ ENTRYPOINT ["open_twin.exe",
 
 
 \subsection{Windows Base Image}
-Container images must have the same operating system as basis for their processes. Compared to virtualization this reduces the isolation on the one hand, but improves performance on the other.
+Because of the light-weight isolation layer of containers, the operating system of container images must match those on the host machine. Compared to virtualization this light-weight approach reduces the isolation on the one hand, but improves performance on the other.
 It is a requirement to have the same operating system kernel when running container images on Linux. However, on \ac{Windows} host-process isolation it is a requirement to have the exact same build version for the base image as for the host machine. This means, a container based on Windows Server 2019 (Version 10.0.17763.4010) cannot run on Windows Server 2022 (Version 10.0.20348.1547).
 The isolation that is built on Hyper-V virtualization does not have this requirement. 
-Microsoft provides several image tags (\enquote{ltsc2019}, \enquote{ltsc2022}, and so on) for different kinds of operating system versions\cite{MattbriggsMicrosoft.20230214,Microsoft.20230313}. They also offer one general image tag for multiple architectures. However, they do not offer a more generous tag having a broad version coverage, even though the \acp{CRI} would support it. Therefore the host operating system always has to match the container image tag.
+Microsoft provides several image tags (\enquote{ltsc2019}, \enquote{ltsc2022}, and so on) for different kinds of operating system versions\cite{MattbriggsMicrosoft.20230214,Microsoft.20230313}. They also offer one general image tag for multiple architectures\cite{Microsoft.20230313}. However, they do not offer a more generous tag having a broad version coverage, even though the \acp{CRI} support it. This is why the container image tag always has to match the host operating system.
 
 There are two different ways to solve this flaw of operating system inconsistency. One method is given by \ac{K8s}. \ac{K8s} supports filtering based on the build number of a node\cite{Brasmithms.20230313}. For this, a separate \tcode{nodeSelector} key is defined as shown in \autoref{lst:results.windows_build}.
 \begin{lstlisting}[caption={\ac{K8s} manifest with node selector for specific Windows build.}, label=lst:results.windows_build, language=yaml]
@@ -39,17 +39,18 @@ A second method is to build different versions of one image and assign them the 
 
 
 \subsection{Local images namespace}
-If images are locally imported, they have to be in the ContainerD namespace "k8s.io" to get recognized by \ac{K8s}. However, if images are built with Docker, they are not recognized by ContainerD and additionally get the default namespace assigned. Although, images pulled with \ac{K8s} from a image registry are getting imported correctly. The faulty namespace behavior cannot be changed during the image build. Therefore, the change of the namespace is required for locally imported images on the one hand, and it requires a transfer of the image from the Docker environment to the ContainerD environment on the other hand.
-Thus, the only solution to use local images without uploading them to a image registry, is by performing the following steps for each image:
+If images are locally imported, they have to be in the ContainerD namespace "k8s.io" to get recognized by \ac{K8s}. However, ContainerD on \ac{Windows} is not able to build images because the \ac{Windows} support for the build extension \enquote{build-kit} is still under development\cite{Microsoft.20221225}. If images are built with Docker, they are not recognized by ContainerD and additionally get the default namespace assigned. Although, images pulled with \ac{K8s} from a image registry are getting imported correctly. The faulty namespace behavior cannot be changed during the image build, because the \ac{CLI} of Docker does not provide the necessary option. Thus the change of the namespace is required for locally imported images on the one hand, and it requires a transfer of the image from the Docker environment to the ContainerD environment on the other hand.
+So the only way to use local images without uploading them to an image registry is to perform the following steps for each image:
 \begin{enumerate}
-	\item Building the image in Docker (using \texttt{docker build})
-	\item Exporting the image to an archive file (using \texttt{docker save})
-	\item Loading the image to ContainerD to correct namespace (using \texttt{ctr --namespace k8s.io image import})
+	\item Build the image in Docker (using \texttt{docker build})
+	\item Export the image to an archive file (using \texttt{docker save})
+	\item Load the image to ContainerD to correct namespace (using \texttt{ctr --namespace k8s.io image import})
 \end{enumerate}
-Since the application images of \ac{OT} become very large (\~{}2.8 Gigabyte), the three steps taking about five minutes each. Depending on the amount of container images to process and the performance of the host computer, this consumes about half an hour.
-Therefore, to automate this process for a batch of container files, the PowerShell script \textit{build-image.ps1} has been created. The script reads Container files in a directory and afterwards performs the described steps on it as shown in \autoref{lst:results.image_namespace_build}.
-The defined variable \tcode{\$ContainerRegistry} is set to the address of the image registry for tagging the image. In this case, it is the stub domain \enquote{local.dev}. If an image is not tagged with a proper domain name, the \ac{CRI} is unable pull it and it cannot be found by \ac{K8s}.
-\tcode{\$BaseName} is the filename of the container file and therefore the name of the image. The created temporary file \textit{container.tar} after the script has finished.
+Because the application images of \ac{OT} become very large (\~{}2.8 Gigabyte), the three steps taking about five to ten minutes each. Depending on the amount of container images to process and the performance of the host computer, this consumes about half an hour.
+
+To automate this process for a batch of container files, the PowerShell script \textit{build-image.ps1} was created. The script reads container files in a directory and afterwards performs the described steps on it as shown in \autoref{lst:results.image_namespace_build}.
+The defined variable \tcode{\$ContainerRegistry} is set to the address of the image registry for tagging the image. In this case it is the stub domain \enquote{local.dev}. If an image is not tagged with a proper domain name, the \ac{CRI} is unable pull it and it cannot be found by \ac{K8s}.
+\tcode{\$BaseName} is the filename of the container file and therefore the name of the image. The created temporary file \textit{container.tar} is deleted by the script after it has finished.
 \begin{lstlisting}[caption={Crucial commands used in the custom PowerShell script to automate process of image building.}, label=lst:results.image_namespace_build, language=powershell, morekeywords={docker, ctr}]
 $containerfiles | ForEach-Object {
   docker build -f "$($_)" -t "$($ContainerRegistry)/opentwin-$($_.BaseName):latest" \<*@ \Suppressnumber @*>
@@ -60,25 +61,31 @@ $containerfiles | ForEach-Object {
 
 
 \section{Kubernetes}
-
+Flaws with the documentation and the compatibility between different versions have been found while working with \ac{K8s}. This highlights the special treatment that is required to add \ac{Windows} nodes to the cluster. The details are described in this section.
+ 
 \subsection{System requirements}
 Because \ac{K8s} does not support containers based on Hyper-V isolation\cite{Kubernetes.20230227}, host-process containers must be used.
-For using host-process containers on \ac{Windows}, at least Windows Server in version 2019 with build number \enquote{17763.379} is required or the update \enquote{KB4489899} needs to be installed\cite{GitHubKubernetesSIGWindowsTools.20230213}. Furthermore, \ac{K8s} also has the fixed requirement of the usage of \enquote{Windows Server 2019} and above\cite{Kubernetes.20230227}. This reduces the subset of compatible node operating system. \ac{Windows} client machines are not able to host containers for the usage in \ac{K8s} and a minimum version is required.
-The update cannot be installed manually which means it is impossible to get support for \enquote{Windows 10} based systems that are not part of this group. In the business area, Microsoft sells major upgrades of Windows Server as separate product. That is why the necessity of upgrading to at least Windows Server Build 17763 can induce a higher expense.
+For using host-process containers on \ac{Windows}, at least Windows Server in version 2019 with build number \enquote{17763.379} is required or the update \enquote{KB4489899} needs to be installed\cite{GitHubKubernetesSIGWindowsTools.20230213}. Furthermore, \ac{K8s} also has the fixed requirement of the usage of \enquote{Windows Server 2019} and above\cite{Kubernetes.20230227}. This reduces the subset of compatible node operating system, because \ac{Windows} client machines are not able to host containers for the usage in \ac{K8s} and a minimum version of \enquote{Windows Server} is required.
+Moreover, the update cannot be installed manually which means it is impossible to get support for \enquote{Windows 10} based systems that are not part of this group. In the business area, Microsoft sells major upgrades of Windows Server as separate product. That is why the necessity of upgrading to at least \enquote{Windows Server Build 17763} can induce a higher expense.
 
 Additionally, there is the incompatibility with the control plane on \ac{Windows}. This requires an additional Linux node for running the \ac{K8s} control plane and hence is not conducive for a homogeneous system landscape. 
 
 \subsection{Documentation}
-The official documentation of \ac{K8s} is incomplete or outdated on some pages. There is partially work in progress and while consuming the documentation it is hard to detect if a specific article is applicable for the current version of \ac{K8s}.
-For example, this became fundamental on the page \enquote{Adding Windows nodes}\cite{Kubernetes.20220419}. At the current time being, the actual page is only available as an archived version for \ac{K8s} version \enquote{v1.23}. However, if the same \ac{URL} is called for the unarchived the user gets redirected to a similar page \enquote{Creating a cluster with kubeadm}\cite{Kubernetes.20221107}. Reading the page, people could assume that they can follow the steps described to add a \ac{Windows} node. However, the fact that the guide is aligned to Linux is only barely mentioned and thus is misleading.
+The official documentation of \ac{K8s} also hides some obstacles while implementing a cluster. It turned out to be incomplete or outdated on some pages.
+To be more precise, there is partially work in progress and while consuming the documentation it is hard to detect if a specific article is applicable for the current version of \ac{K8s}.
+
+For example, this became fundamental on the page \enquote{Adding Windows nodes}\cite{Kubernetes.20220419}. At the current time being, the actual page is only available as an archived version for \ac{K8s} version \enquote{v1.23}. However, if the same \ac{URL} is called for the unarchived version, the user gets redirected to a similar page \enquote{Creating a cluster with kubeadm}\cite{Kubernetes.20221107}. This can easily happen if a link is followed from an issue or a web search. Reading the page, people could assume that they can follow the steps described there to add a \ac{Windows} node to a cluster. However, the fact that the guide is aligned to Linux is only barely mentioned and thus is misleading.
 That also means that there is no guide for adding \ac{Windows} nodes in the current version of the documentation of \ac{K8s}.
 
-The guide for adding \ac{Windows} nodes provided from \ac{SIG} \enquote{Windows Tools}\cite{GitHubKubernetesSIGWindowsTools.20230213} has a more streamlined approach and benefits from provided PowerShell scripts, like \enquote{PrepareNode.ps1}. However, due to the small community, the guide still stays faulty or outdated. For example, the guide shows a warning, \enquote{The instructions and scripts in the directory DO NOT configure a CNI solution for Windows nodes running containerd. There is a work-in-progress PR to assist in this at \#239}\cite{GitHubKubernetesSIGWindowsTools.20230213}. However, the guide does explain how to configure a \ac{CNI} and the linked pull request is merged since December 2022.
+The guide for adding \ac{Windows} nodes provided from \ac{SIG} \enquote{Windows Tools}\cite{GitHubKubernetesSIGWindowsTools.20230213} has a more streamlined approach and benefits from provided PowerShell scripts, like \enquote{PrepareNode.ps1} (which is used in \autoref{chap:implementation.setup_worker}). However, due to the small community, the guide still stays faulty or outdated. For example, the guide shows a warning, \enquote{The instructions and scripts in the directory DO NOT configure a CNI solution for Windows nodes running containerd. There is a work-in-progress PR to assist in this at \#239}\cite{GitHubKubernetesSIGWindowsTools.20230213}. But the guide does explain how to configure a \ac{CNI} and the linked pull request is merged since December 2022. Thus, the warning is misleading.
 Furthermore, it reads \enquote{Do not forget to add --cri-socket [\dots] at the end of the join command, if you use ContainerD}\cite{GitHubKubernetesSIGWindowsTools.20230213}. The explicit appending of the \ac{CRI} socket however is not necessary for versions higher than \enquote{v1.25} as mentioned in \autoref{chap:implementation.setup_worker}.
 
-The guide from \ac{SIG} \enquote{Windows Tools} was still work in progress while the cluster was setup. A change in the documentation for applying a required daemon set on the cluster was only added after some time. Taking into account that Windows nodes are supported since over year, a functional documentation was expected.
+The guide from \ac{SIG} \enquote{Windows Tools} was still work in progress while the cluster was set up. A change in the documentation for applying a required daemon set on the cluster was only added after three months. Taking into account that Windows nodes are supported since over year, a functional documentation was expected.
 
-\section{Interfaces to other systems}
+\section{Interfaces within the abstraction layers}
+The communication within the different abstraction layers is a crucial part of a complex system like \ac{K8s}. Kubectl has to communicate the commands to the container runtime and Flannel. These communicate with the operating system layer, the hosted applications exchange their status with the \ac{CRI}, and so on. 
+It is crucial for the correctness of the system to have all parts compatible to each other. The flaws related to these problems are described here. 
+
 \subsection{Version interoperability}
 The whole \ac{K8s} landscape consists of a huge amount of systems and third-party tools. This burdens the risk of version incompatibilities. 
 % This was identified while setting up the cluster and the \ac{CNI}.

@@ -102,7 +102,10 @@ Once started, the user can login. In order to connect to the database, the follo
 	\label{fig:ot-network-communication-sequence}
 \end{figure}
 
-The traffic between services is encrypted using \ac{mTLS} technology. While regular \ac{TLS} ensures the authenticity of the server by using Certificates and the chain of trust, it does not verify the identity of the client. This is the benefit of \ac{mTLS}. In \ac{mTLS}, both sides, client and server has to verify their identity by providing a certificate inherited from a common root authority.
+%The traffic between services is encrypted using \ac{mTLS} technology. While regular \ac{TLS} ensures the authenticity of the server by using Certificates and the chain of trust, it does not verify the identity of the client. This is the benefit of \ac{mTLS}. In \ac{mTLS}, both sides, client and server has to verify their identity by providing a certificate inherited from a common root authority.
+
+% TODO: OpenGL -> file rename
+
 
 % TODO: Section about "Containerization and/vs VM"
 % TODO: Section about "Container & Container image"
@@ -130,16 +133,16 @@ After sending the certificate from server to the client, the client validates th
 
 
 \subsection{Mutual authentication}
-The mutual authentication is adding another step to the one-way authentication. The application of it is used in \ac{mTLS}. Instead of just sending the server's certificate to the client, the client also sends a certificate to the server. Therefore, not only the authenticity of the server is ensured, but also of the client.
+The mutual authentication is adding another step to the one-way authentication. The application of it is used in \ac{mTLS} as extension of the classic \ac{TLS} protocol\cite{Rescorla.2018, HugoKrawczyk.2016}. Instead of just sending the server's certificate to the client, the client also sends a certificate to the server. Therefore, not only the authenticity of the server is ensured, but also of the client.
 
 As can be seen in \autoref{fig:mtls-protocol}, compared to the \ac{TLS} handshake, the \ac{mTLS} handshake involves additional messages 5 and 6 for sending and validating the client's certificate.
-Unlike with the server certificate, the client certificate is not validated against a publicly available root authority\cite{Cloudflare.20230309}. Instead, the server acts as root authority, creates the client certificate and ships it with the application\cite{Cloudflare.20230309}.
+Unlike with the server certificate, the client certificate is not validated against a publicly available root authority\cite{Cloudflare.20230309, Rescorla.2018}. Instead, the server acts as root authority, creates the client certificate and ships it with the application\cite{Cloudflare.20230309}.
 
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.55\textwidth]{Figures/mtls.pdf}
-	\caption{Simplified visualization of the \ac{mTLS} handshake\cite{Cloudflare.20230309}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message \enquote{Hello Done} (4). The client then validates the certificate and compares it against the locally stored root authority. Afterwards, the client sends its certificate to the server (5). The server validates the client certificate against its local root authority and grants access to the service (6). Afterwards, the key exchange starts (7,8) to ensure an encrypted communication.}
+	\caption{Simplified visualization of the \ac{mTLS} handshake\cite{Cloudflare.20230309, Rescorla.2018}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message \enquote{Hello Done} (4). The client then validates the certificate and compares it against the locally stored root authority. Afterwards, the client sends its certificate to the server (5). The server validates the client certificate against its local root authority and grants access to the service (6). Afterwards, the key exchange starts (7,8) to ensure an encrypted communication.}
 	\label{fig:mtls-protocol}
 \end{figure}
 
