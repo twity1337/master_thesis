@@ -1,9 +1,15 @@
 % !TeX spellcheck = en_US
+
 \chapter{Conclusion and future work} % Main chapter title
 
 \label{chap:conclusion} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
 
 \lhead{Chapter \ref*{chap:conclusion}. \emph{Conclusion and future work}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+
+\section{Analysis}
+% Network - Checklist
+% Open points?
+% --> Results
 
 
 \section{Lessons learned}
@@ -13,10 +19,11 @@
 The thesis proofed that implementing a cluster with \ac{Windows} nodes is not easy to handle. The switch from Docker to ContainerD is still an ongoing progress and is not completed yet.
 The Hyper-V isolation shipped with \ac{Windows} as \ac{CRI} abstracts some issues with the underlying container isolation and also flattens the requirement of having the same \ac{OS} kernel on the host system and inside the container. Problems on the \ac{OS} level are mostly solved and inputs are properly validated so that errors are more understanding.
 The host-process isolation, however, is providing a pure abstraction layer to the containers. This means that processes inside the container are not virtualized and still use parts of the host system.
-This hides pitfalls as % networking is not yet fully functional, and errors are sometimes confusing.
+This hides pitfalls as, for example, networking is not yet fully functional, and errors are sometimes confusing.
 
-The results showed many pitfalls that one has to be aware of. This includes missing quality in documentation and difficulties in the error handling of the \ac{K8s} systems. When it comes to the community, hard to find help especially for the cases where ContainerD is in use.
-After containerization of the cluster
+The results showed many pitfalls that one has to be aware of. This includes missing quality in documentation and difficulties in the error handling of the \ac{K8s} systems. When it comes to the community, it is hard to find help for the special with ContainerD on \ac{Windows}. This might be reasonable due to the small size of the community. From this point of view it is obvious that \ac{Windows} is not fully supported on \ac{K8s} yet.
+
+The containerization of \ac{OT} uncovered some pitfalls as well. For example, the application was adapted based on the requirements of the container network.
 
 % TODO: Proof bringen, dass community klein ist und viele tickets wegen triage geschlossen werden. und unbeantwortet bleiben.
 
