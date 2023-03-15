@@ -24,12 +24,12 @@ ENTRYPOINT ["open_twin.exe",
 
 
 \subsection{Windows Base Image}
-Because of the light-weight isolation layer of containers, the operating system of container images must match those on the host machine. Compared to virtualization this light-weight approach reduces the isolation on the one hand, but improves performance on the other.
-It is a requirement to have the same operating system kernel when running container images on Linux. However, on \ac{Windows} host-process isolation it is a requirement to have the exact same build version for the base image as for the host machine. This means, a container based on Windows Server 2019 (Version 10.0.17763.4010) cannot run on Windows Server 2022 (Version 10.0.20348.1547).
+Because of the light-weight isolation layer of containers, the \ac{OS} of container images must match those on the host machine. Compared to virtualization this light-weight approach reduces the isolation on the one hand, but improves performance on the other.
+It is a requirement to have the same \ac{OS} kernel when running container images on Linux. However, on \ac{Windows} host-process isolation it is a requirement to have the exact same build version for the base image as for the host machine. This means, a container based on Windows Server 2019 (Version 10.0.17763.4010) cannot run on Windows Server 2022 (Version 10.0.20348.1547).
 The isolation that is built on Hyper-V virtualization does not have this requirement. 
-Microsoft provides several image tags (\enquote{ltsc2019}, \enquote{ltsc2022}, and so on) for different kinds of operating system versions\cite{MattbriggsMicrosoft.20230214,Microsoft.20230313}. They also offer one general image tag for multiple architectures\cite{Microsoft.20230313}. However, they do not offer a more generous tag having a broad version coverage, even though the \acp{CRI} support it. This is why the container image tag always has to match the host operating system.
+Microsoft provides several image tags (\enquote{ltsc2019}, \enquote{ltsc2022}, and so on) for different kinds of \ac{OS} versions\cite{MattbriggsMicrosoft.20230214,Microsoft.20230313}. They also offer one general image tag for multiple architectures\cite{Microsoft.20230313}. However, they do not offer a more generous tag having a broad version coverage, even though the \acp{CRI} support it. This is why the container image tag always has to match the host \ac{OS}.
 
-There are two different ways to solve this flaw of operating system inconsistency. One method is given by \ac{K8s}. \ac{K8s} supports filtering based on the build number of a node\cite{Brasmithms.20230313}. For this, a separate \tcode{nodeSelector} key is defined as shown in \autoref{lst:results.windows_build}.
+There are two different ways to solve this flaw of \ac{OS} inconsistency. One method is given by \ac{K8s}. \ac{K8s} supports filtering based on the build number of a node\cite{Brasmithms.20230313}. For this, a separate \tcode{nodeSelector} key is defined as shown in \autoref{lst:results.windows_build}.
 \begin{lstlisting}[caption={\ac{K8s} manifest with node selector for specific Windows build.}, label=lst:results.windows_build, language=yaml]
 nodeSelector:
   "beta.kubernetes.io/os": windows
@@ -66,7 +66,7 @@ Flaws with the documentation and the compatibility between different versions ha
  
 \subsection{System requirements}
 Because \ac{K8s} does not support containers based on Hyper-V isolation\cite{Kubernetes.20230227}, host-process containers must be used.
-For using host-process containers on \ac{Windows}, at least Windows Server in version 2019 with build number \enquote{17763.379} is required or the update \enquote{KB4489899} needs to be installed\cite{GitHubKubernetesSIGWindowsTools.20230213}. Furthermore, \ac{K8s} also has the fixed requirement of the usage of \enquote{Windows Server 2019} and above\cite{Kubernetes.20230227}. This reduces the subset of compatible node operating system, because \ac{Windows} client machines are not able to host containers for the usage in \ac{K8s} and a minimum version of \enquote{Windows Server} is required.
+For using host-process containers on \ac{Windows}, at least Windows Server in version 2019 with build number \enquote{17763.379} is required or the update \enquote{KB4489899} needs to be installed\cite{GitHubKubernetesSIGWindowsTools.20230213}. Furthermore, \ac{K8s} also has the fixed requirement of the usage of \enquote{Windows Server 2019} and above\cite{Kubernetes.20230227}. This reduces the subset of compatible node \ac{OS}, because \ac{Windows} client machines are not able to host containers for the usage in \ac{K8s} and a minimum version of \enquote{Windows Server} is required.
 Moreover, the update cannot be installed manually which means it is impossible to get support for \enquote{Windows 10} based systems that are not part of this group. In the business area, Microsoft sells major upgrades of Windows Server as separate product. That is why the necessity of upgrading to at least \enquote{Windows Server Build 17763} can induce a higher expense.
 
 Additionally, there is the incompatibility with the control plane on \ac{Windows}. This requires an additional Linux node for running the \ac{K8s} control plane and hence is not conducive for a homogeneous system landscape. 
@@ -84,7 +84,7 @@ Furthermore, it reads \enquote{Do not forget to add --cri-socket [\dots] at the 
 The guide from \ac{SIG} \enquote{Windows Tools} was still work in progress while the cluster was set up. A change in the documentation for applying a required daemon set on the cluster was only added after three months. Taking into account that Windows nodes are supported since over year, a functional documentation was expected.
 
 \section{Interfaces within the abstraction layers}
-The communication within the different abstraction layers is a crucial part of a complex system like \ac{K8s}. Kubectl has to communicate the commands to the container runtime and Flannel, which communicate with the operating system layer, and the hosted applications exchange their status with the \ac{CRI}. 
+The communication within the different abstraction layers is a crucial part of a complex system like \ac{K8s}. Kubectl has to communicate the commands to the container runtime and Flannel, which communicate with the \ac{OS} layer, and the hosted applications exchange their status with the \ac{CRI}. 
 It is crucial for the correctness of the system to have all parts compatible to each other. The flaws related to these problems are described here. 
 
 \subsection{Version interoperability}
@@ -96,7 +96,7 @@ Another finding covers the fact that support for Docker was removed from \ac{K8s
 This can also be seen on the missing build support for \ac{Windows} containers in ContainerD. Until now the container images have to be built in Docker and need to be shifted to ContainerD, because the required tools (\enquote{build-kit}) are not yet available for \ac{Windows}\cite{Microsoft.20221225}.
 
 \subsection{Error handling}
-The additional abstraction layer for the \ac{HCS} is loosing information in error cases. Errors on the operating system level are passed to the user, but \ac{Windows} does not provide much additional information alongside the error. For example, in cases with an incorrect container image entry point as described in \autoref{chap:results.container_manifest} the error message returned to the \ac{K8s} control plane is \enquote{hcs::CreateComputeSystem session: The system cannot find the file specified.: unknown}. With no further arguments given, it is hard to break the issue down to the actual file.
+The additional abstraction layer for the \ac{HCS} is loosing information in error cases. Errors on the \ac{OS} level are passed to the user, but \ac{Windows} does not provide much additional information alongside the error. For example, in cases with an incorrect container image entry point as described in \autoref{chap:results.container_manifest} the error message returned to the \ac{K8s} control plane is \enquote{hcs::CreateComputeSystem session: The system cannot find the file specified.: unknown}. With no further arguments given, it is hard to break the issue down to the actual file.
 
 Furthermore, error cases on one \ac{Windows} version differ from the one on other versions. This has been found while setting up the \enquote{kube-proxy} pod with the exact same steps on Windows Server 2022 and Windows Server 2019. While the error message on 2019 is rather generic (\enquote{The directory name is invalid.}), the error message for 2022 is more explanatory (\enquote{IP address is either invalid or not part of any configured subnet(s)}).
 

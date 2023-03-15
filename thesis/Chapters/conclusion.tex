@@ -11,8 +11,10 @@
 
 \section{Conclusion}
 The thesis proofed that implementing a cluster with \ac{Windows} nodes is not easy to handle. The switch from Docker to ContainerD is still an ongoing progress and is not completed yet.
-The Hyper-V isolation as \ac{CRI} abstracts some issues with the underlying container isolation. Problems on the operating system level are mostly solved and inputs are properly validated so that errors are more understanding.
-The host-process isolation offered by \ac{Windows}, however, is providing a pure abstraction layer to the containers.
+The Hyper-V isolation shipped with \ac{Windows} as \ac{CRI} abstracts some issues with the underlying container isolation and also flattens the requirement of having the same \ac{OS} kernel on the host system and inside the container. Problems on the \ac{OS} level are mostly solved and inputs are properly validated so that errors are more understanding.
+The host-process isolation, however, is providing a pure abstraction layer to the containers. This means that processes inside the container are not virtualized and still use parts of the host system.
+This hides pitfalls as % networking is not yet fully functional, and errors are sometimes confusing.
+
 The results showed many pitfalls that one has to be aware of. This includes missing quality in documentation and difficulties in the error handling of the \ac{K8s} systems. When it comes to the community, hard to find help especially for the cases where ContainerD is in use.
 After containerization of the cluster
 

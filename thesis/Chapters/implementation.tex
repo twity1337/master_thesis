@@ -134,7 +134,7 @@ RUN C:\app\Deployment\VC_Redist\VC_redist.x64.exe /install /quiet
 The container files differ in the runtime specification. They run the same entry point, but have a different process running as command. Besides, the exposed port depends on the service inside the container. 
 After defining the command and copying the files into the container image (lines 22-28), the certificates are built as part of the image file system (line 29). Since the compute services are dependent to C++ libraries that are not present in the base image, the Microsoft Visual C++ Redistributable must be installed as well (line 31).
 
-% Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host operating system.
+% Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host \ac{OS}.
 % Deployment-Verzeichnis muss dafür initial auf Node kopiert werden.
 % TODO: (Skript ("setup-node") dafür schreiben, was neusten release von github zieht (RUN download?) und image autom. baut + image pusht?)  - base image (FROM) mittels args dynamisch gestalten?
 
@@ -147,7 +147,7 @@ The used version of \ac{K8s} is \enquote{v1.25.3}. The version of ContainerD is 
 For setting up the master node on Linux, a system based on Debian Bullseye 11.5 was used. Basis for the performed steps is the \ac{K8s} documentation for setting up a container runtime\cite{Kubernetes.2019} and the online tutorial of Basappa\cite{Basappa.2022}.
 
 \subsubsection{Installing prerequisites and ContainerD}
-After installing and setting up the operating system, the swap mechanism needs to be permanently turned off. This is done by editing the file system table (\tcode{fstab}), in file \tcode{/etc/fstab} respectively, by commenting out the swap partitions and masking the systemd swap units as shown in \autoref{lst:disable_swap}.
+After installing and setting up the \ac{OS}, the swap mechanism needs to be permanently turned off. This is done by editing the file system table (\tcode{fstab}), in file \tcode{/etc/fstab} respectively, by commenting out the swap partitions and masking the systemd swap units as shown in \autoref{lst:disable_swap}.
 \begin{lstlisting}[label=lst:disable_swap, caption={Bash commands for disabling Swap mechanism and masking.}, language=bash]
 $ sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 $ systemctl mask dev-sda3.swap
@@ -318,7 +318,7 @@ nodeSelector:
 % TODO: Powershell script beschreiben
 Even though the scripts provided from the \ac{SIG} \enquote{Windows Tools} cover most of the preparation steps, some manual steps are still required as described in the respective guide\cite{GitHubKubernetesSIGWindowsTools.20230213}. To automate the preparation process where possible, and to also provide tools for debugging error cases, further steps are required. Thus, a custom script (\textit{Distribution/Container/setup-node.ps1}) was created to provide this aid.
 
-The script automates the process of rebooting and rerunning the preparation after the required \ac{Windows} features are installed, and provides instructions for steps that cannot be automated. It also checks the prerequisites before performing any action. This means, it is checked whether the operating system is \enquote{\ac{Windows} Server} and if a certain minimum version of \ac{Windows} is used. The check for prerequisites is shown in \autoref{lst:auto.check_preq}.
+The script automates the process of rebooting and rerunning the preparation after the required \ac{Windows} features are installed, and provides instructions for steps that cannot be automated. It also checks the prerequisites before performing any action. This means, it is checked whether the \ac{OS} is \enquote{\ac{Windows} Server} and if a certain minimum version of \ac{Windows} is used. The check for prerequisites is shown in \autoref{lst:auto.check_preq}.
 \begin{lstlisting}[label=lst:auto.check_preq, caption={Powershell commands in the automated setup script. Checks for prerequisites.}, language=PowerShell]
 if (-not ((Get-ComputerInfo).WindowsProductName | Select-String "Server")) {
   throw "Prerequisites not met. Windows Server is required as operating system."
