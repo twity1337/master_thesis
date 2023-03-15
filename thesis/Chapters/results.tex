@@ -51,6 +51,7 @@ Because the application images of \ac{OT} become very large (\~{}2.8 Gigabyte), 
 To automate this process for a batch of container files, the PowerShell script \textit{build-image.ps1} was created. The script reads container files in a directory and afterwards performs the described steps on it as shown in \autoref{lst:results.image_namespace_build}.
 The defined variable \tcode{\$ContainerRegistry} is set to the address of the image registry for tagging the image. In this case it is the stub domain \enquote{local.dev}. If an image is not tagged with a proper domain name, the \ac{CRI} is unable pull it and it cannot be found by \ac{K8s}.
 \tcode{\$BaseName} is the filename of the container file and therefore the name of the image. The created temporary file \textit{container.tar} is deleted by the script after it has finished.
+
 \begin{lstlisting}[caption={Crucial commands used in the custom PowerShell script to automate process of image building.}, label=lst:results.image_namespace_build, language=powershell, morekeywords={docker, ctr}]
 $containerfiles | ForEach-Object {
   docker build -f "$($_)" -t "$($ContainerRegistry)/opentwin-$($_.BaseName):latest" \<*@ \Suppressnumber @*>
@@ -83,26 +84,26 @@ Furthermore, it reads \enquote{Do not forget to add --cri-socket [\dots] at the 
 The guide from \ac{SIG} \enquote{Windows Tools} was still work in progress while the cluster was set up. A change in the documentation for applying a required daemon set on the cluster was only added after three months. Taking into account that Windows nodes are supported since over year, a functional documentation was expected.
 
 \section{Interfaces within the abstraction layers}
-The communication within the different abstraction layers is a crucial part of a complex system like \ac{K8s}. Kubectl has to communicate the commands to the container runtime and Flannel. These communicate with the operating system layer, the hosted applications exchange their status with the \ac{CRI}, and so on. 
+The communication within the different abstraction layers is a crucial part of a complex system like \ac{K8s}. Kubectl has to communicate the commands to the container runtime and Flannel, which communicate with the operating system layer, and the hosted applications exchange their status with the \ac{CRI}. 
 It is crucial for the correctness of the system to have all parts compatible to each other. The flaws related to these problems are described here. 
 
 \subsection{Version interoperability}
-The whole \ac{K8s} landscape consists of a huge amount of systems and third-party tools. This burdens the risk of version incompatibilities. 
+The huge amount of systems and third-party tools the whole \ac{K8s} landscape consists of burdens the risk of version incompatibilities. 
 % This was identified while setting up the cluster and the \ac{CNI}.
-The versions of Flannel and the \ac{CNI} that are written in the manifest have to match the version installed on every node in the cluster (including the control plane). This induces the necessity of string replacements to hand in the correct versions and increases complexity.
+The versions of Flannel and the \ac{CNI} that are written in the manifest have to match the version installed on every node in the cluster (including the control plane). For example, the Flannel version on the node system has to match the version defined in the Flannel pod manifest. This induces the necessity of string replacements to hand in the correct versions and increases complexity.
 
 Another finding covers the fact that support for Docker was removed from \ac{K8s} before properly introducing the alternative ContainerD to not only Linux but also \ac{Windows}. The majority of guides that can be found online still stick to Docker as basis. Guides that cover specific cases with ContainerD are rare.
-This can also be seen on the missing build support for \ac{Windows} containers in ContainerD. Until now the container images have to be built in Docker and need to be shifted to ContainerD, because the required tools (\enquote{buildkit}) are not yet available for \ac{Windows}.
+This can also be seen on the missing build support for \ac{Windows} containers in ContainerD. Until now the container images have to be built in Docker and need to be shifted to ContainerD, because the required tools (\enquote{build-kit}) are not yet available for \ac{Windows}\cite{Microsoft.20221225}.
 
 \subsection{Error handling}
-The additional abstraction layer for the \ac{HCS} is loosing information in error cases. For example, in cases with an incorrect container image entry point as described in \autoref{chap:results.container_manifest} the error message returned to the \ac{K8s} control plane was \enquote{hcs::CreateComputeSystem session: The system cannot find the file specified.: unknown}. With no further arguments given, it is hard to break the issue down to the actual error.
+The additional abstraction layer for the \ac{HCS} is loosing information in error cases. Errors on the operating system level are passed to the user, but \ac{Windows} does not provide much additional information alongside the error. For example, in cases with an incorrect container image entry point as described in \autoref{chap:results.container_manifest} the error message returned to the \ac{K8s} control plane is \enquote{hcs::CreateComputeSystem session: The system cannot find the file specified.: unknown}. With no further arguments given, it is hard to break the issue down to the actual file.
 
 Furthermore, error cases on one \ac{Windows} version differ from the one on other versions. This has been found while setting up the \enquote{kube-proxy} pod with the exact same steps on Windows Server 2022 and Windows Server 2019. While the error message on 2019 is rather generic (\enquote{The directory name is invalid.}), the error message for 2022 is more explanatory (\enquote{IP address is either invalid or not part of any configured subnet(s)}).
 
 % - Cluster networking throws weird error messages when performed inside hyper-v vm ("Directory not found")
 Additionally, the error reporting of \ac{OT} itself can still be more improved. The logging mechanisms on \ac{OT} are still under development and thus logging is rare. If a service crashes it is tricky to reproduce the cause. Especially for the compute services the generated output does not contain useful information. Due to the fact that the console window stays not open after a crash, the output is hard to catch.
 In some cases throughout the code base exceptions are not caught or just swallowed, where it is better to treat them and return the exception message.
-Also, since Rust cannot catch foreign exceptions, they cannot be exchanged between the service \ac{DLL} and the main executable. This is why all exceptions should be fully treated inside the service \ac{DLL}. 
+Also, since Rust cannot catch foreign exceptions, they cannot be exchanged between the service \ac{DLL} and the main executable. This is why all exceptions have to be fully treated inside the service \ac{DLL}. 
 
 
 \subsection{Database server}
