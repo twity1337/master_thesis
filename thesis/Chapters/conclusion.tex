@@ -10,14 +10,23 @@
 % man kann sich hier auch wiederholen; für leute, damit sie nicht nochmal die gleichen fehler machen-
 
 \section{Conclusion}
+The thesis proofed that implementing a cluster with \ac{Windows} nodes is not easy to handle. The switch from Docker to ContainerD is still an ongoing progress and is not completed yet.
+The Hyper-V isolation as \ac{CRI} abstracts some issues with the underlying container isolation. Problems on the operating system level are mostly solved and inputs are properly validated so that errors are more understanding.
+The host-process isolation offered by \ac{Windows}, however, is providing a pure abstraction layer to the containers.
+The results showed many pitfalls that one has to be aware of. This includes missing quality in documentation and difficulties in the error handling of the \ac{K8s} systems. When it comes to the community, hard to find help especially for the cases where ContainerD is in use.
+After containerization of the cluster
 
-
+% TODO: Proof bringen, dass community klein ist und viele tickets wegen triage geschlossen werden. und unbeantwortet bleiben.
 
 \section{Future work}
+The results showed that there are still some points open. Moreover there are plenty of opportunities using the findings as a basis and implement a full functional cluster on top of it. This section mentions what can be optimized in the future and provides an outcast for future implementations.
+
+
+- Images verkleinern - nur die Dateien ins Image bundlen, die für den entsprechenden Service notwendig sind.
+
 - Linux  port and cluster based on linux
 - Automated image building using Packer.io (for multiple platforms)
 - Ranger for streamlining kubernetes deployment
-- Images verkleinern - nur die Dateien ins Image bundlen, die für den entsprechenden Service notwendig sind.
 - Put certificate files into container via file mount - Design?
 
 - Falls OT sowieso in Container gebaut werden muss, dann kann dieser Schritt auch automatisiert werden (clone aus git, bauen mit Build Tools)
