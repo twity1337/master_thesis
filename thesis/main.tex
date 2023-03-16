@@ -65,6 +65,7 @@
 	numbers=left,
 	basicstyle=\footnotesize\ttfamily
 }
+\renewcommand{\lstlistlistingname}{List of Code Listings}
 %\LetLtxMacro{\oldtexttt}{\texttt}
 %\renewcommand{\texttt}[1]{\tiny{\oldtexttt{#1}}}
 
@@ -215,6 +216,11 @@ The acknowledgements and the people to thank go here, don't forget to include yo
 
 \lhead{\emph{List of Tables}} % Set the left side page header to "List of Tables"
 \listoftables % Write out the List of Tables
+
+
+\lhead{\emph{\lstlistlistingname}}
+\patchcmd{\tableofcontents}{\addtotoc{Contents}}{\addtotoc{\lstlistlistingname}}{}{}
+\lstlistoflistings
 
 %----------------------------------------------------------------------------------------
 %	ABBREVIATIONS

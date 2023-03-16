@@ -35,17 +35,19 @@ In general the thesis comes to the result that the development of a cluster with
 % TODO: Proof in "Results" bringen, dass community klein ist und viele tickets wegen triage geschlossen werden. und unbeantwortet bleiben.
 
 \section{Future work}
-The results showed that there are still some points open. Using the findings as a basis, there are plenty of opportunities to implement a cluster and enhance it in the future. This section mentions what can be optimized in the future and provides an outcast for future implementations.
+The results showed that there is still room for improvement. Using the findings as a basis, there are plenty of opportunities to implement a cluster and enhance it in the future. This section mentions what can be optimized in the future and provides an outcast for future implementations.
 First, further investigation has to be done on the network connectivity of the pods. Currently, there is no functional domain name system within the \ac{K8s} cluster, because the Kube-Proxy does not work in combination with Flannel on \ac{Windows}.
 
 For a production environment, the certificates should not be build as part of the container image build process. Instead the certificate files should be injected into the container file system via mounts.
 
 Moreover, the images size should be more reduced, because roughly three gigabyte per image can cause problems later on. For example, when using a central image repositories like Artifactory\footnote{Artifactory: https://jfrog.com/de/artifactory/} this would reduce the required storage space and the download duration during an image pull. A first step in this direction can be to only keep necessary dependencies in an image for a corresponding service.
 
+Since the compute services of \ac{OT} are not yet containerized each, horizontal scaling of the application is barely possible. Having a container image for each compute service, would allow having multiple replicas for the compute services and therefore would improve scaling.
+
 The development team currently works on porting \ac{OT} from \ac{Windows} to Linux.
 Since it was shown that a major problem is caused by the insufficient support of \ac{Windows} on \ac{K8s}, the development on the Linux port should be kept up. Majority of the faced problems might be solved on homogeneous Linux clusters.
 
-This might then also simplify the utilization of the graphic processing unit in \ac{K8s} pods. Since \ac{OT} performs complex computations on the graphics card, \ac{OT} would benefit from this change.
+This might then also simplify the utilization of the graphic processing unit in \ac{K8s} pods. Since some services of \ac{OT} perform complex computations on the graphics card, \ac{OT} would benefit from this change.
 
 In general, keeping an eye on the documentation of \ac{K8s} is crucial, since as shown in this thesis, the guides that can be found online are mostly still under development.
 

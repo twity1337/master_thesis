@@ -81,6 +81,8 @@ That also means that there is no guide for adding \ac{Windows} nodes in the curr
 The guide for adding \ac{Windows} nodes provided from \ac{SIG} \enquote{Windows Tools}\cite{GitHubKubernetesSIGWindowsTools.20230213} has a more streamlined approach and benefits from provided PowerShell scripts, like \enquote{PrepareNode.ps1} (which is used in \autoref{chap:implementation.setup_worker}). However, due to the small community, the guide still stays faulty or outdated. For example, the guide shows a warning, \enquote{The instructions and scripts in the directory DO NOT configure a CNI solution for Windows nodes running containerd. There is a work-in-progress PR to assist in this at \#239}\cite{GitHubKubernetesSIGWindowsTools.20230213}. But the guide does explain how to configure a \ac{CNI} and the linked pull request is merged since December 2022. Thus, the warning is misleading.
 Furthermore, it reads \enquote{Do not forget to add --cri-socket [\dots] at the end of the join command, if you use ContainerD}\cite{GitHubKubernetesSIGWindowsTools.20230213}. The explicit appending of the \ac{CRI} socket however is not necessary for versions higher than \enquote{v1.25} as mentioned in \autoref{chap:implementation.setup_worker}.
 
+% TODO: Powershell scripts use git, but git is not installed. Errors need to be masked.
+
 The guide from \ac{SIG} \enquote{Windows Tools} was still work in progress while the cluster was set up. A change in the documentation for applying a required daemon set on the cluster was only added after three months. Taking into account that Windows nodes are supported since over year, a functional documentation was expected.
 
 \section{Interfaces within the abstraction layers}

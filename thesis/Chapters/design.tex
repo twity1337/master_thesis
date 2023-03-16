@@ -56,6 +56,9 @@ Deployments are used to define declarative states for Pods. This allows to maint
 
 In the following paragraphs, the crucial services are described in detail. Since every service is a pod, they can have multiple replicas. Only the core service have to run on a dedicated Linux node the so called \enquote{control plane node} or \enquote{master node}. The underlying \ac{OS} must be Linux, because \ac{Windows} is not supported as control plane. The other services can run on nodes (with any \ac{OS}) for executing the applications and perform computations (\enquote{compute node} or \enquote{worker node}).
 
+The services are controlled by the \ac{CLI} tools \enquote{kubectl} and \enquote{kubeadm}. While \enquote{kubectl} controls the deployment of services and application on the cluster, \enquote{kubeadm} is for setting up the cluster initially.
+Furthermore, the tool \enquote{crictl} can be separately installed for the inspection of the local \ac{CRI} on a node. It allows insights into the  containers and images, but also into locally installed pods. Additionally, pods and containers can be managed using this tool.
+
 \paragraph*{etcd}
 The etcd\footnote{etcd: https://etcd.io/} database server is a key-value store designed for distributed systems\cite{Luksa.2018}. That means it could run with multiple replications and would still be able to keep a persistent storage synchronized across multiple instances. It contains the applied configuration of several cluster entities (e.g. User configurations, deployments, pod configurations).
 
@@ -118,6 +121,9 @@ Compared to Flannel, Calico\footnote{Tigera's Calico: https://www.tigera.io/proj
 
 For this use case, Flannel is used as network plugin, since it is the described plugin used in the documentations for setting up \ac{K8s} with \ac{Windows} containers\cite{GitHubKubernetesSIGWindowsTools.20230213,Kubernetes.20220419}. Hence, support for this \ac{CNI} plugin in relation with \ac{Windows} containers is assumed to be larger than with Calico.
 
+
+
+
 \section{Container environment}
 The ecosystem around containerization defines terminology that needs to be looked at before going into details for \ac{K8s}. First of all, the \acf{CRI} defines the interface between \ac{K8s} and container runtime. Most of the container runtimes follow the design principles defined by the Open Container Initiative (OCI)\footnote{OCI: https://opencontainers.org/} for describing images and containers. The actual container runtime runs the isolation layer between the physical host machine and the \ac{K8s} cluster by using containerization of processes. This is what can be selected when working with \ac{K8s}.
 
@@ -134,18 +140,22 @@ ContainerD is a native version of a container runtime. Newer versions of Docker 
 
 The developers of \ac{K8s} marked the Docker \ac{CRI} as deprecated in version v1.20\cite{Kubernetes.2020}. Since version v1.23 of \ac{K8s}, Docker was fully removed which lead to ContainerD being the only available \ac{CRI} for \ac{Windows} containers.
 
-\begin{figure}[h]
+\begin{figure}[hb]
 	\centering
-	\includegraphics[width=0.38\textwidth]{Figures/containerd-architecture.pdf}
+	\includegraphics[width=0.4\textwidth]{Figures/containerd-architecture.pdf}
 	\caption{Abstraction layers for ContainerD on Windows. The image shows the technology stack from the Docker and \ac{K8s} command line to the Container layer.\cite{Scooley.2022}}
 	\label{fig.containerd-architecture}
 \end{figure}
+
+% TODO: CLI tools for ContainerD
+There are two \ac{CLI} tools that work with ContainerD. The tool \enquote{ctr} is the low level \ac{CLI} tool that is shipped with ContainerD.  \enquote{nerdctl} is a tool that is similar to the Docker \ac{CLI}  and supports the same set of commands and options as Docker. Compared to \enquote{ctr}, however, \enquote{nerdctl} is more feature-rich.
 
 
 \subsection{Docker Container Runtime Interface}
 The Docker \ac{CRI} (so called \enquote{Docker shim}) is using the internal mechanisms from Docker to run containers. Older versions in Linux were using control group isolation.
 
-For \ac{Windows}, there are two different modes available. The first option is using the process isolation mode offered by ContainerD. It can be enabled by switching to \enquote{\ac{Windows} Containers}. It is the default mode for Windows Server systems. However, older versions of Docker and Docker on Windows 10 and above have the opposite behavior\cite{RamosApolinario.2021}. On client versions of Windows, a dedicated hypervisor-isolated virtualization is the default option\cite{RamosApolinario.2021}. This means, during the installation of Docker on \ac{Windows}, the underlying Windows container host creates a separate Hyper-V \ac{VM} to run container images. However, this is not a regular Hyper-V \ac{VM}. Instead, it is a purpose-built \ac{VM}, often referred to as utility \ac{VM} or UVM that can't be managed directly and is fully controlled by the \ac{Windows} container runtime\cite{RamosApolinario.2021}. For networking, the internal mechanisms from Docker are used. All running containers are deployed inside the dedicated Hyper-V \ac{VM}. Therefore, this is a mixture of process isolation and full isolation using virtualization.
+For \ac{Windows}, there are two different isolation modes available. The first option is using the process isolation (so called \enquote{Host process isolation}) mode offered by ContainerD. It can be enabled by switching to \enquote{\ac{Windows} Containers}. It is the default mode for Windows Server systems.
+However, older versions of Docker and Docker on Windows 10 and above have the opposite behavior\cite{RamosApolinario.2021}. On client versions of Windows, a dedicated hypervisor-isolated virtualization (so called \enquote{Hyper-V isolation}) is the default option\cite{RamosApolinario.2021}. This means, during the installation of Docker on \ac{Windows}, the underlying Windows container host creates a separate Hyper-V \ac{VM} to run container images. However, this is not a regular Hyper-V \ac{VM}\cite{RamosApolinario.2021}. Instead, it is a purpose-built \ac{VM}, often referred to as utility \ac{VM} or UVM that can't be managed directly and is fully controlled by the \ac{Windows} container runtime\cite{RamosApolinario.2021}. For networking, the internal mechanisms from Docker are used. All running containers are deployed inside the dedicated Hyper-V \ac{VM}. Therefore, this is a mixture of process isolation and full isolation using virtualization.
 
 However, the hypervisor approach still has the disadvantage of using large resources for containers, even though they are running in one virtual machine. In addition, containers running in hypervisor isolation take longer to start up than those running in process isolation\cite{RamosApolinario.2021}.
 
@@ -153,14 +163,11 @@ However, the hypervisor approach still has the disadvantage of using large resou
 
 
 \section{Container Image}
-The container image consists of a base part and a part for custom configuration. Both are further explained in the following sections.
-
-Container images are described, using the Containerfile\footnote{Containerfile: https://www.mankier.com/5/Containerfile} format. % TODO: Example Containerfile
 There are container images for each process of the system architecture, each of them having their own Containerfile definition with different command line arguments and environment variables.
-
+The container image and its base image is further explained in this section.
 
 \subsection{Base image}
-The container images to use for running the OpenTwin processes need to run a \ac{Windows} base image. Beside the full \ac{Windows} images, Microsoft\textsuperscript{\tiny\textregistered} offers the more common images \enquote{\ac{Windows} Server Core} and \enquote{\ac{Windows} Nanoserver}\cite{MattbriggsMicrosoft.20230214}. They significantly differ in the download size, their on-disk footprint and the features supported\cite{MattbriggsMicrosoft.20230214}. As Microsoft states, \enquote{Nanoserver was built to provide just enough \ac{API} surface to run apps that have a dependency on .NET core or other modern open source frameworks. PowerShell, Windows Management Instrumentation, and the \ac{Windows} servicing stack are absent from the Nanoserver image}\cite{MattbriggsMicrosoft.20230214}.
+The container images to use for running the OpenTwin processes need to run a \ac{Windows} base image. Beside the full \ac{Windows} images, Microsoft offers the more common images \enquote{\ac{Windows} Server Core} and \enquote{\ac{Windows} Nanoserver}\cite{MattbriggsMicrosoft.20230214}. They significantly differ in the download size, their on-disk footprint and the features supported\cite{MattbriggsMicrosoft.20230214}. As Microsoft states, \enquote{Nanoserver was built to provide just enough \ac{API} surface to run apps that have a dependency on .NET core or other modern open source frameworks. PowerShell, Windows Management Instrumentation, and the \ac{Windows} servicing stack are absent from the Nanoserver image}\cite{MattbriggsMicrosoft.20230214}.
 
 The design of containerization of \ac{OT} envisages the usage of \enquote{Server Core} as base image. Even though the \enquote{Server Core} image is not the smallest base image, it provides full functionality for the required technologies for the current use case.
 
@@ -176,8 +183,14 @@ The root certificate (certificate authority) is passed as file mount into the co
 
 
 \section{Target architecture}
-The application needs to be distributed on multiple systems. Kubernetes supports application rollout only as container images. To be able to distribute the services on a cluster management tool a containerization of the application is necessary.
+The application is distributed on multiple systems. \ac{K8s} supports application rollouts only as container images. To be able to distribute the services on a cluster management tool a containerization of the application is necessary.
+Each service shall be served on the cluster to profit from the features which \ac{K8s} offers. For example, it must be possible to offer multiple replications of services - with the compute services included. This is the only way to ensure that the application can be delivered reliably. 
+However, for testing the feasibility it is sufficient to deploy only the main services as a first step. This involves \ac{GSS}, \ac{LSS} and \ac{AUTH}. Subsequently, the \ac{LSS} spawns the compute services as sub processes inside the same container. In order to communicate with the \ac{UI} front end, the connection between the external network and the relay service has to be ensured.
 
-% TODO: Filemount für Zertifikate
-% TODO: Jeden Service in eigenen Container / Pod
-% TODO: 
+The MongoDB server is not required to run on \ac{Windows}. Because setting it up on Linux is easier and better supported, a dedicated Linux node for running the MongoDB server is preferred. The \ac{OT} services, however, have to run on \ac{Windows} and are therefore deployed on a \ac{Windows} node.
+
+The encrypted communication between services has to be ensured. As a consequence, the certificates need to be accessible for each service. The certificate files shall be published on the container file system using file mounts. This increases flexibility because files can be easily swapped out, and generated for each service outside the container. Certificate files then have to be created during pod creation.
+However, as a first step, the certificates are generated as part of the image build process to keep the automation simpler.
+
+
+

@@ -10,14 +10,14 @@
 \section{Application under study}
 \acf{OT} is a open-source simulation platform developed by the university of Applied Sciences in Frankfurt, Germany. It covers features like computer aided design and meshing and is also a physics simulation (having solvers for Finite Integration and PHREEC). The projects can be administered by a user and group management (see~\autoref{fig:ot-project}). Furthermore, all changes on a project are version-controlled. The application is designed in a way, that only a local thin-client needs to run on the users computer. After entering the login credentials (see~\autoref{fig:ot-login}), the client securely connects to a centralized service platform where the computation is made. The results and even the \ac{UI} information is sent back to the client application. This has the benefit, that also weak computers can run the application.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
 	\includegraphics[width=.9\textwidth]{Figures/ot-project.png}
 	\caption{The \ac{OT} project overview.}
 	\label{fig:ot-project}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
 	\includegraphics[width=.9\textwidth]{Figures/ot-login.png}
 	\caption{The \ac{OT} login screen.}
@@ -25,7 +25,7 @@
 \end{figure}
 
 \autoref{fig:ot-model} shows the application itself with a loaded project and a simple geometric model.
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
 	\includegraphics[width=.9\textwidth]{Figures/ot-model.png}
 	\caption{A opened project inside \ac{OT} with a few created geometric models and subtracted computation.}
@@ -55,7 +55,7 @@ Each service runs in its own \ac{OS} process.
 	\centering
 	\begin{tabular}{|l | p{.65\textwidth}|} 
 		\hline
-		Name & Task  \rule{-5pt}{2.6ex} \\
+		\bfseries Name & \bfseries Task  \rule{-5pt}{2.6ex} \\
 		\hline \rule{-3pt}{3ex}
 		CartesianMeshService & If demanded, it converts a continuous geometry into a discrete Cartesian mesh. \\
 		FITTDService & If demanded, it runs a solver algorithm for transle electromagnetic simulation based on the finite integration technique (FIT).\\
@@ -72,13 +72,14 @@ Each service runs in its own \ac{OS} process.
 	\label{tbl:ot-compute-services}
 \end{table}
 
+The Visualization Service requires features from version 2.0 of the graphics library OpenGL\footnote{OpenGL: https://opengl.org/}. Systems where no graphics card is installed or systems that run a server \ac{OS} do not have OpenGL 2.0 available. For these environments the \ac{DLL} file \enquote{opengl32sw.dll} in the installation directory can be renamed to \enquote{opengl32.dll}. This enables software rendering and allows system to run \ac{OT} that do not meet this requirement.
 
-As shown in \autoref{fig:ot-network-communication-diagram}, the services can be separated by their network space. Not all services require a public available network address.
+As shown in \autoref{fig:ot-network-communication-diagram}, the services can be separated by their network space on multiple layers. Not all services require a public available network address.
 While \ac{GSS}, \ac{AUTH} and database are globally accessible via a fixed network address, the \ac{LSS} can theoretically run on a dedicated host and is only communicated to other parties after it has registered itself to the \ac{GSS}. The services, spawned by \ac{LSS} do not require a public address space either. All communication between the \ac{UI} front end and the compute services is achieved via a relay service and a web socket communication channel.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
-	\includegraphics[width=0.7\textwidth]{Figures/opentwin-network-communication-diagram.pdf}
+	\includegraphics[width=0.8\textwidth]{Figures/opentwin-network-communication-diagram.pdf}
 	\caption{Communication overview and service organization for \ac{OT} main services. In 1.1 the \ac{LSS} registers at \ac{GSS}. As soon as the \ac{UI} front end connects to the \ac{GSS}~(2.1), service information is exchanged~(2.2) and the user is authenticated~(2.3). As a consequence, the \ac{GSS} creates a new session and tells the \ac{LSS} to spawn new compute services. From now on the \ac{UI} front end communicates directly with the Compute services via the Relay Service over a web socket connection.}
 	\label{fig:ot-network-communication-diagram}
 \end{figure}
@@ -95,26 +96,18 @@ Once started, the user can login. In order to connect to the database, the follo
 \item From now on, the \ac{UI} front end communicates with the application services via the Relay service over a web socket.
 \end{enumerate}
 
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
-	\includegraphics[width=0.98\textwidth]{Figures/opentwin-network-communication-sequence.pdf}
+	\includegraphics[width=0.99\textwidth]{Figures/opentwin-network-communication-sequence.pdf}
 	\caption{Service initialization of \ac{OT} processes. In the beginning, the main services \ac{GSS}, \ac{AUTH} and an optional \ac{LSS} are initialized. While the \ac{GSS} checks the reachability of \ac{AUTH}, the \ac{LSS} registers itself at the \ac{GSS}. After starting the \ac{UI} front end, the service information is requested from a \ac{GSS} and the user is authenticated. Afterwards, the project list for the authenticated user is displayed. After opening a project, the \ac{UI} front end connects to the \ac{LSS} and requests a new session. As consequence, the \ac{LSS} spawns the compute services and connects them to the \ac{UI} front end via a Relay Service. (Ping messages are omitted.)}
 	\label{fig:ot-network-communication-sequence}
 \end{figure}
 
 %The traffic between services is encrypted using \ac{mTLS} technology. While regular \ac{TLS} ensures the authenticity of the server by using Certificates and the chain of trust, it does not verify the identity of the client. This is the benefit of \ac{mTLS}. In \ac{mTLS}, both sides, client and server has to verify their identity by providing a certificate inherited from a common root authority.
 
-% TODO: OpenGL -> file rename
-
-
-% TODO: Section about "Containerization and/vs VM"
-% TODO: Section about "Container & Container image"
-% TODO: Einführung Containerd CLI tools (crictl, nerdctl, ctr <preinstalled>)
-% TODO: ContainerD kann kein Build auf Windows - buildkit daemon is required, buildkit: only linux is supported (https://github.com/moby/buildkit) buildkitd is only available for Linux currently. 
-% TODO: Container file == Container file definition of file type .Containerfile
-
 
 \section{Network traffic encryption}
+
 Each service of \ac{OT} offers two different channels for secure communication between services. One channel supports traditional one-way \ac{TLS}, while the other uses bidirectional \ac{mTLS}. The one-way \ac{TLS} channel is mostly used for checking the general health state of a service, while the two-way \ac{mTLS} is used for relevant application based communication.
 In this section both encryption methods are briefly presented.
 
@@ -124,9 +117,9 @@ In this section both encryption methods are briefly presented.
 A simplified handshake of the \ac{TLS} protocol is depicted in \autoref{fig:tls-protocol}.
 After sending the certificate from server to the client, the client validates the certificate based on the chain of trust. This means, it checks if the certificate was issued by a trusted root authority (so called \ac{CA}). Only if the authenticity of the server is ensured, the encryption key is exchanged in order to start an encrypted communication.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
-	\includegraphics[width=0.55\textwidth]{Figures/tls.pdf}
+	\includegraphics[width=0.6\textwidth]{Figures/tls.pdf}
 	\caption{Simplified visualization of the \ac{TLS} handshake\cite{Rescorla.2018}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message \enquote{Hello Done} (4). The client then validates the certificate and compares it against the chain of trust. Afterwards, the key exchange starts (5,6) to ensure an encrypted communication.}
 	\label{fig:tls-protocol}
 \end{figure}
@@ -139,12 +132,13 @@ As can be seen in \autoref{fig:mtls-protocol}, compared to the \ac{TLS} handshak
 Unlike with the server certificate, the client certificate is not validated against a publicly available root authority\cite{Cloudflare.20230309, Rescorla.2018}. Instead, the server acts as root authority, creates the client certificate and ships it with the application\cite{Cloudflare.20230309}.
 
 
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
-	\includegraphics[width=0.55\textwidth]{Figures/mtls.pdf}
+	\includegraphics[width=0.6\textwidth]{Figures/mtls.pdf}
 	\caption{Simplified visualization of the \ac{mTLS} handshake\cite{Cloudflare.20230309, Rescorla.2018}. After initialization of the handshake (1,2), the server sends its certificate (3) and finishes with a message \enquote{Hello Done} (4). The client then validates the certificate and compares it against the locally stored root authority. Afterwards, the client sends its certificate to the server (5). The server validates the client certificate against its local root authority and grants access to the service (6). Afterwards, the key exchange starts (7,8) to ensure an encrypted communication.}
 	\label{fig:mtls-protocol}
 \end{figure}
+
 
 \subsection{Certificate creation}
 For creation of certificates in the application landscape of \ac{OT}, CloudFlare's public key infrastructure toolkit \enquote{cfssl}\footnote{cfssl: https://cfssl.org/ or https://github.com/cloudflare/cfssl} is used.
@@ -166,6 +160,65 @@ Additionally, the client and server certificate that derive from the root \ac{CA
   }]
 }
 \end{lstlisting}
+
+
+
+% TODO: Einführung Containerd CLI tools (crictl, nerdctl, ctr <preinstalled>)
+% TODO: ContainerD kann kein Build auf Windows - buildkit daemon is required, buildkit: only linux is supported (https://github.com/moby/buildkit) buildkitd is only available for Linux currently. 
+% TODO: Container file == Container file definition of file type .Containerfile
+\section{Containers and Virtualization}
+In general, there are two different options for isolating applications in cloud environments. These are Virtualization and Containerization. Both are briefly presented in this section.
+
+\subsection{Virtualization}
+Virtualization (or \acp{VM}) allows the software simulation of physical hardware to an \acp{OS}. The real hardware is faked to the \ac{OS} kernel and the \ac{VM} can, under optimal conditions, not distinguish between whether it is running on real hardware or if it runs in a simulation. Because \acp{VM} just run as a software on a physical machine (the so called \enquote{host computer}), it provides the possibility for operating multiple computers on one physical machine.
+The fundamental architecture of the virtualization technology is shown in \autoref{fig:background.virtualization}.
+
+\begin{figure}[b]
+	\centering
+	\includegraphics[width=0.65\textwidth]{Figures/virtualization.pdf}
+	\caption{Brief presentation of the virtualization technology\cite{RamosApolinario.2021, Warrier.20201120}. Multiple \acp{OS} run on the same physical machine simultaneously. The hardware is mocked by the hypervisor layer.}
+	\label{fig:background.virtualization}
+\end{figure}
+
+Besides isolating the \ac{OS} kernel and all of its processes, the network layer also has to be isolated. This is usually achieved by three  different approaches:
+\begin{itemize}
+\item \textbf{Network address translation} One approach is to convert the network packets between the \ac{VM} and the host computer based on \ac{NAT}. This means, the host computer provides a network interface which is connected to the \ac{VM}. Incoming and outgoing traffic to the \ac{VM} is translated using the additional virtual network interface. % TODO: Beleg
+\item \textbf{Bridged network} In this approach the traffic between \ac{VM} and host computer is "bridged". This means, the \ac{VM} gets its own \ac{IP} address assigned and is seen and acts as its own member.
+\item \textbf{Host network} The host network approach hides the \ac{VM} from the outer network and only allows communication between the \ac{VM} and the host machine.
+\end{itemize}
+
+
+Microsoft offers with \enquote{Hyper-V} its own virtualization software since \enquote{Windows 8}. % TODO: Beleg
+
+
+\subsection{Container}
+As shown in \autoref{fig:background.container}, Container have a more lightweight concept of isolation compared to virtualization. Instead of providing an isolation layer for both, the \ac{OS} kernel and the running processes, only the processes are isolated (\enquote{process isolation}). Compared to virtualization, this increases performance of the isolated processes and reduces the startup time.
+
+\begin{figure}[b]
+	\centering
+	\includegraphics[width=0.5\textwidth]{Figures/containerization.pdf}
+	\caption{Brief presentation of the containerization technology\cite{RamosApolinario.2021, Warrier.20201120}. Each isolated process runs inside a container, the \ac{OS} kernel is shared.}
+	\label{fig:background.container}
+\end{figure}
+
+Containers share the \ac{OS} kernel with the host system.  Thus, \ac{OS} kernel and processes running inside the container have to match.
+However, this does allow libraries to be shared within containers where necessary\cite{Warrier.20201120}.
+The process isolation is performed by encapsulating the file system, the users, the kernel processes and the network interfaces of the host system towards the container. Each container receives its own set of those encapsulated core objects. For the isolation of the network the same strategies as for virtualization apply.
+
+Because of their lightweight nature, containers usually only encapsulate a single application process. For encapsulating an application, one has to build a \enquote{container image}.  For the description of an image, the Containerfile format\footnote{Containerfile: https://www.mankier.com/5/Containerfile} is mostly used. The preparation of an image as \enquote{infrastructure-as-code} allows to build a reproducible environment on different machines. An example of a Containerfile is given in \autoref{lst:background.containerfile}.
+
+\begin{lstlisting}[label=lst:background.containerfile, caption={Example of a container file. A file (file.txt) is copied to a Windows Server container (to C:\textbackslash out.txt), and this file is printed during the container run using the command.}, language=docker]
+FROM mcr.microsoft.com/windows/server:ltsc2022
+COPY file.txt C:\out.txt
+CMD type C:\out.txt
+\end{lstlisting}
+
+Container images can derive from other images that can derive from images again, and so on. Thus, an image definition consist of a general part as baseline (the \enquote{base image}) and an application specific part. On top of this chain is an image for containerizing the \ac{OS} processes. From which base image a container image derives is defined by the \tcode{FROM} statement (line~1).
+The value after \tcode{FROM} defines the address to the base image, whereas the value \enquote{ltsc2022} is called \enquote{image tag} and usually used for defining a concrete version of the base image. In this case, this is \enquote{\ac{Windows} Server 2022}.
+
+Other statements can be given, for example, for copying files into the container file system (line~2), running commands for preparing the image or defining meta data about the image. The statement \tcode{CMD} (line~3) defines the command that is automatically run and monitored, once the container image has started. If this command exits, the container is also automatically terminated.
+
+If images are not available on a host system, they are \enquote{pulled} from a \enquote{container registry}. It is a server that hosts the images, and is available either public or private.
 
 
 \section{Problem statement}

@@ -73,7 +73,7 @@ For the current time being, there is an ongoing work to replace the logging to s
 
 \subsubsection*{Certificate changes}
 Since \ac{OT} is using \ac{mTLS} for communication between services, the \ac{CSR} file needs to contain the host specification for the outgoing \ac{IP} address and host name. Thus, in \ac{OT} a batch script substitutes placeholders in a template \ac{CSR} file. The respective section of the \ac{CSR} template is shown in \autoref{lst:implementation.mtls_csr_replacement}.
-\begin{lstlisting}[label=lst:implementation.mtls_csr_replacement, caption={Variables defined in the \ac{CSR} are substituted by their respective values. (\textit{/Deployment/Certificates/server-csr\_template.json})}, language={}, firstnumber=3]
+\begin{lstlisting}[label=lst:implementation.mtls_csr_replacement, caption={Variables defined in the \ac{CSR} are substituted by their respective values. (\textit{/Deployment/\hspace{0.01em}Certificates/server-csr\_template.json})}, language={}, firstnumber=3]
   "hosts": ["$HOSTNAME$", "$IP_ADDRESS$", "localhost", "127.0.0.1"],
 \end{lstlisting}
 However, this process does not work if performed for a containerized application. If the replacement takes place during the creation of the container, the final host name or \ac{IP} address does not yet exist. If, on the other hand, the automatic replacement is done later, it cannot be carried out from outside the container, as the script automatically replaces only the local host name.
