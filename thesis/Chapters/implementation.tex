@@ -1,3 +1,4 @@
+% !TeX spellcheck = en_US
 \chapter{Implementation} % Main chapter title
 
 \label{chap:implementation} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
@@ -10,8 +11,6 @@
 \section{Containerization of Services}
 Container images are provided for running the application inside the \ac{CRI}. Definition of the container manifest is done in the \enquote{Containerfile}\footnote{Containerfile: https://www.mankier.com/5/Containerfile} format.
 
-% TODO: ENTWEDER-ODER: Build has to be done inside the container. / All binary files are part of the container image.
-
 \subsection{Code changes on core application}
 For containerizing the \ac{OT} application, several changes were applied to its code base. This improves error handling and error tracing of the application and therefore simplifies development of the cluster. In the following sections, the several code changes are described in detail.
 
@@ -22,7 +21,7 @@ Exit-Codes are a crucial part of the \ac{K8s}'s life cycle management as describ
 \begin{lstlisting}[label=lst:code_changes.exitcodes.before, caption={Former code snippet from main executable for calling the microservice library code in Rust (\textit{/Microservices/OpenTwin/src/main.rs})}, language=rust, firstnumber=85]
 let _result = initialize(siteid_c_str.as_ptr(), service_c_str.as_ptr(), db_c_str.as_ptr(), dir_c_str.as_ptr());
 \end{lstlisting}
-The surrounding lines of code in the main executable are shown in \autoref{lst:code_changes.exitcodes.before}. It calls the initialization method of the microservice \ac{DLL}, passes all its parameters and retrieves its return code.
+The surrounding lines of code in the main executable are shown in \autoref{lst:code_changes.exitcodes.before}\footnote{The code listings in this thesis have the corresponding file mentioned as part of the caption. Furthermore, their line numbers are aligned to the corresponding file.}. It calls the initialization method of the microservice \ac{DLL}, passes all its parameters and retrieves its return code.
 
 \begin{lstlisting}[label=lst:code_changes.exitcodes.after, caption={Code changes in Rust main executable for additional treatment of exit codes (\textit{/Microservices/OpenTwin/src/main.rs})}, language=rust, firstnumber=86]
 if _result != 0 {
@@ -107,7 +106,6 @@ println!("Server listening on {:?} (publishing {:?})", binding_address, service_
 \end{lstlisting}
 The binding address is separated from the published address, since the address in the argument still gets passed to the microservice \ac{DLL}. Afterwards, the service \ac{URL} is processed as shown in \autoref{lst:listen_all_interfaces.after}. First, the given service \ac{URL} is parsed and the port number is extracted (lines 150-152). If no port is found or the parsing failed, the application fails and shows an error (lines 153-155). Afterwards, the port number is concatenated with the binding address \enquote{0.0.0.0} and therefore the server binds to all addresses (lines 156-157). The last line shows the new output containing the port number and the address published to other services.
 
-% TODO - Bugfix for OpenGL error in uiFrontend (not necessary??)
 
 \subsection{Container definition}
 There were three container images prepared for containerization of \ac{OT}. These cover the main services for \ac{GSS}, \ac{LSS} and \ac{AUTH}. The structure is the same for each of the container files. The first part of the container file is shown in \autoref{lst:containerfile.1}.
@@ -136,7 +134,7 @@ After defining the command and copying the files into the container image (lines
 
 % Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host \ac{OS}.
 % Deployment-Verzeichnis muss dafür initial auf Node kopiert werden.
-% TODO: (Skript ("setup-node") dafür schreiben, was neusten release von github zieht (RUN download?) und image autom. baut + image pusht?)  - base image (FROM) mittels args dynamisch gestalten?
+% -TODO: (Skript ("setup-node") dafür schreiben, was neusten release von github zieht (RUN download?) und image autom. baut + image pusht?)  - base image (FROM) mittels args dynamisch gestalten?
 
 
 \section{Cluster Setup}
@@ -286,6 +284,65 @@ Besides containing the token and the master node's \ac{IP} address, the command 
 
 The successful join of the node is verified by running \tcode{kubectl get nodes} on the master node. This prints the newly added node.
 
+
+\section{Automatic setup}
+% TODO: Powershell script beschreiben
+Even though the scripts provided from the \ac{SIG} \enquote{Windows Tools} cover most of the preparation steps, some manual steps are still required as described in the respective guide\cite{GitHubKubernetesSIGWindowsTools.20230213}. To automate the preparation process where possible, and to also provide tools for debugging error cases, further steps are required. Thus, a custom script (\textit{Distribution/Container/setup-node.ps1}) was created to provide this aid.
+
+The script automates the process of rebooting and rerunning the preparation after the required \ac{Windows} features are installed, and provides instructions for steps that cannot be automated. It also checks the prerequisites before performing any action. This means, it is checked whether the \ac{OS} is \enquote{\ac{Windows} Server} and if a certain minimum version of \ac{Windows} is used. The check for prerequisites is shown in \autoref{lst:auto.check_preq}.
+\begin{lstlisting}[label=lst:auto.check_preq, caption={Powershell commands in the automated setup script. Checks for prerequisites.}, language=PowerShell]
+	if (-not ((Get-ComputerInfo).WindowsProductName | Select-String "Server")) {
+		throw "Prerequisites not met. Windows Server is required as operating system."
+	}
+	if (-not (Get-Hotfix -ErrorAction Ignore KB4489899)) {
+		if (-not ([System.Environment]::OSVersion.Version -gt [System.Version]"10.0.17763.0")) {
+			throw "Prerequisites not met. You either need KB4489899 installed, or a Windows Version higher than 10.0.17763"
+		}
+	}
+\end{lstlisting}
+
+Besides checking for system requirements, the custom script also installs tools for debugging. This includes the \ac{Windows} version of \enquote{kubeadm} and \enquote{kubectl}, as well as the command line tools for debugging containers on \ac{Windows}, namely \enquote{crictl} and \enquote{nerdctl}.
+Furthermore, the custom script also excludes the ContainerD process from the \ac{Windows} Defender firewall as shown in \autoref{lst:auto.win_defender}. This increases the pull and general runtime performance of containers.
+The installation of the command line tools also involves setting up PowerShell auto completion and include to the \tcode{PATH} environment variable.
+\begin{lstlisting}[label=lst:auto.win_defender, caption={Powershell command in the automated setup script. Exclusion of all actions performed by containerd.exe from Windows Defender.}, language=PowerShell, numbers=none]
+	Add-MpPreference -ExclusionProcess "$Env:ProgramFiles\containerd\containerd.exe"
+\end{lstlisting}
+
+
+\subsection{Cluster design}
+Adding worker nodes to the existing cluster was probed in three different scenarios. Starting point of the investigation was the most complex approach (\autoref{fig:implementation.cluster-scenario.1}). The complexity of the system was subsequently reduced in order to break down errors that were related to networking, the encrypted communication and the host-process isolation.
+Those scenarios are described here more in detail.
+
+The first scenario, as seen in \autoref{fig:implementation.cluster-scenario.1}, is the most complex one. The two physical computers shown in the figure represent the machines where the \ac{K8s} nodes are running. Here, \enquote{Physical computer 1 (PC1)} is a local Linux machine in the role of the control plane, whereas \enquote{Physical computer 2 (PC2)} is a high-performance computer for running the worker. Because PC2 is located in the university and therefore access restricted, the organizationally simplest approach was to set up a \ac{VM} on PC2. The \ac{VM} then had unrestricted access. The \ac{K8s} compute node is set up in this \ac{VM}.
+Both physical machines are connected to the Internet and not within the same network. Instead of accessing PC2 directly via a public \ac{IP} address, both computers have to be connected to a \ac{VPN}. \ac{VPN} is a technology, where network traffic is encrypted to enable access to an internal network from the outside.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=.8\textwidth]{Figures/Cluster-scenarios-1.pdf}
+	\caption{Cluster design scenario where worker node is running on a dedicated machine inside the protected University network. Additionally, the worker node is hosted inside a \ac{VM} to have another isolation layer and full admin privileges on the worker node.}
+	\label{fig:implementation.cluster-scenario.1}
+\end{figure}
+
+The problems in the first scenario is the additional abstraction layer between Hyper-V \ac{VM} for administer the worker node and the physical machine. This involves additional network interfaces that translate the addresses from within the \ac{VM} to the external network. Misconfiguration in one of those layers can hinder the start of host-process containers that try to bind on these network interfaces.
+
+The second scenario is shown in \autoref{fig:implementation.cluster-scenario.2}. Here, the worker is not inside a \ac{VM} and runs bare metal. The physical computers are still only accessible within the \ac{VPN} and not located in the same network.
+\begin{figure}[ht]
+\centering
+\includegraphics[width=.8\textwidth]{Figures/Cluster-scenarios-2.pdf}
+\caption{Cluster design scenario where worker node is running on a dedicated machine inside the protected University network.}
+\label{fig:implementation.cluster-scenario.2}
+\end{figure}
+Since the \ac{VPN} is still necessary for the connection between PC1 and PC2, this caused problems in the connection between Control Plane and worker node. While implementing the second scenario, \ac{IP} addresses could not be assigned by \ac{K8s}. After starting the containers, the \ac{HCS} threw the error \enquote{IP address is either invalid or not part of any configured subnet(s)}. This was justified by the \ac{VPN} network interface, since it has to support a large amount of subnets.
+
+This leads to the third scenario, shown in \autoref{fig:implementation.cluster-scenario.3}, which is the simplest. Here, the two physical computers are connected directly in the same network. Since this expects mostly the real world scenario this is the preferable one. In this scenario, the containers were able to start and got an \ac{IP} address assigned.
+\begin{figure}[hb]
+	\centering
+	\includegraphics[width=.8\textwidth]{Figures/Cluster-scenarios-3.pdf}
+	\caption{Cluster design scenario where master and worker node were both running on a dedicated physical machine each.}
+	\label{fig:implementation.cluster-scenario.3}
+\end{figure}
+
+
 \subsection{Deployment of the application}
 As a first draft, only the \ac{LSS} of the application is deployed. 
 Deployment of the application is done by applying the manifest as shown in \autoref{lst:deploy.yaml}.
@@ -312,29 +369,4 @@ containers:
 nodeSelector:
   kubernetes.io/os: windows
 \end{lstlisting}
-
-
-\section{Automatic setup}
-% TODO: Powershell script beschreiben
-Even though the scripts provided from the \ac{SIG} \enquote{Windows Tools} cover most of the preparation steps, some manual steps are still required as described in the respective guide\cite{GitHubKubernetesSIGWindowsTools.20230213}. To automate the preparation process where possible, and to also provide tools for debugging error cases, further steps are required. Thus, a custom script (\textit{Distribution/Container/setup-node.ps1}) was created to provide this aid.
-
-The script automates the process of rebooting and rerunning the preparation after the required \ac{Windows} features are installed, and provides instructions for steps that cannot be automated. It also checks the prerequisites before performing any action. This means, it is checked whether the \ac{OS} is \enquote{\ac{Windows} Server} and if a certain minimum version of \ac{Windows} is used. The check for prerequisites is shown in \autoref{lst:auto.check_preq}.
-\begin{lstlisting}[label=lst:auto.check_preq, caption={Powershell commands in the automated setup script. Checks for prerequisites.}, language=PowerShell]
-if (-not ((Get-ComputerInfo).WindowsProductName | Select-String "Server")) {
-  throw "Prerequisites not met. Windows Server is required as operating system."
-}
-if (-not (Get-Hotfix -ErrorAction Ignore KB4489899)) {
-  if (-not ([System.Environment]::OSVersion.Version -gt [System.Version]"10.0.17763.0")) {
-    throw "Prerequisites not met. You either need KB4489899 installed, or a Windows Version higher than 10.0.17763"
-  }
-}
-\end{lstlisting}
-
-Besides checking for system requirements, the custom script also installs tools for debugging. This includes the \ac{Windows} version of \enquote{kubeadm} and \enquote{kubectl}, as well as the command line tools for debugging containers on \ac{Windows}, namely \enquote{crictl} and \enquote{nerdctl}.
-Furthermore, the custom script also excludes the ContainerD process from the \ac{Windows} Defender firewall as shown in \autoref{lst:auto.win_defender}. This increases the pull and general runtime performance of containers.
-The installation of the command line tools also involves setting up PowerShell auto completion and include to the \tcode{PATH} environment variable.
-\begin{lstlisting}[label=lst:auto.win_defender, caption={Powershell command in the automated setup script. Exclusion of all actions performed by containerd.exe from Windows Defender.}, language=PowerShell, numbers=none]
-Add-MpPreference -ExclusionProcess "$Env:ProgramFiles\containerd\containerd.exe"
-\end{lstlisting}
-
 

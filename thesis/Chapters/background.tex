@@ -170,8 +170,7 @@ Additionally, the client and server certificate that derive from the root \ac{CA
 
 \section{Problem statement}
 Even though, the application is clearly based on a microservice architecture and it is able to run on a distributed system, it is not designed for an automated cluster yet.
-It consists of multiple processes where many of them have to run on the same system and need a full working \ac{OS} as baseline.  % TODO(THOMA): DAS MUSS JA NICHT SEIN - "Have to run on same system."
-Containerization of the system has never been tested and needs to be introduced. 
+Furthermore, Containerization of the system has never been tested and needs to be introduced. 
 First, the cluster engine needs to be set up for \ac{Windows} compute nodes to allow \ac{Windows} containers to run inside the cluster. Additionally, it needs to have full network capabilities as well as inter connectivity between the several services.
 Next, the application needs to run inside containers. Therefore, container images must be created and provided for the cluster engine. 
 Additionally, the automatic extension of services requires communication between the cluster orchestration management and the applications running on the nodes. A feature that needs to be introduced later on.
@@ -183,5 +182,3 @@ Furthermore, proper exit codes in error cases are not returned. That is, if the 
 Due to the limited amount of time, not all code changes are applied. On the one hand, this involves the adaption for automatic extension of services. On the other hand, it implies the changes required to make the application more fault-tolerant. The changes that would be necessary, would be too extensive. Therefore, they are only made to the main processes.
 
 As a first case study, the application is not fully containerized. Since the network connectivity is known to cause troubles in \ac{Windows} container networks, there is more investigation required later on. As part of this study, only the main services are containerized and the cluster is set up to investigate the behavior in cluster environments. The actual distribution of an full functional cluster network can be part of further studies later on.
-
-\section{Related Work}

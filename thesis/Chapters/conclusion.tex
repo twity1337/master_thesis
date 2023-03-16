@@ -6,43 +6,55 @@
 
 \lhead{Chapter \ref*{chap:conclusion}. \emph{Conclusion and future work}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
 
-\section{Analysis}
-% Network - Checklist
-% Open points?
-% --> Results
-
-
 \section{Lessons learned}
 % man kann sich hier auch wiederholen; für leute, damit sie nicht nochmal die gleichen fehler machen-
 
 \section{Conclusion}
-The thesis proofed that implementing a cluster with \ac{Windows} nodes is not easy to handle. The switch from Docker to ContainerD is still an ongoing progress and is not completed yet.
-The Hyper-V isolation shipped with \ac{Windows} as \ac{CRI} abstracts some issues with the underlying container isolation and also flattens the requirement of having the same \ac{OS} kernel on the host system and inside the container. Problems on the \ac{OS} level are mostly solved and inputs are properly validated so that errors are more understanding.
+This thesis shows a proof of concept for deploying a microservice application. 
+The application under study is a distributed modeling software that works with services on multiple layers.
+The application comes with a \ac{UI} Frontend which acts as a client, and  several services that run on a a centralized server. The server services spawn compute services for delivering the actual results and data.
+
+In the beginning of this thesis the application was given in a locally installed manner. First tests already showed that the application is able to run on a distributed system. 
+The program was containerized using standard container technology from Docker and ContainerD. In the first prototype, the main services for \ac{GSS}, \ac{AUTH} and \ac{LSS} were shifted into a containerized environment.  
+The containerization of \ac{OT} uncovered some problems. For example, the application had to be adapted to the requirements of the container network. This involves a change of the server binding to all interfaces, to be able to host the service inside a containerized environment, but also the change of the process exit behavior. Furthermore, the general product quality was improved.
+
+The Hyper-V isolation shipped with \ac{Windows} abstracts some issues with the underlying container isolation and also flattens the requirement of having the same \ac{OS} kernel on the host system and inside the container. Problems on the \ac{OS} level are mostly solved and inputs are properly validated so that errors are more understanding.
 The host-process isolation, however, is providing a pure abstraction layer to the containers. This means that processes inside the container are not virtualized and still use parts of the host system.
 This hides pitfalls as, for example, networking is not yet fully functional, and errors are sometimes confusing.
 
-The results showed many pitfalls that one has to be aware of. This includes missing quality in documentation and difficulties in the error handling of the \ac{K8s} systems. When it comes to the community, it is hard to find help for the special with ContainerD on \ac{Windows}. This might be reasonable due to the small size of the community. From this point of view it is obvious that \ac{Windows} is not fully supported on \ac{K8s} yet.
+Furthermore, the cluster was set up and different paradigms for cluster design have been probed. As it turned out in the end, some major issues were present because of the network topology used for the investigation. The chosen approach was a rather simple one where all nodes are located in the same network. In the end, connectivity within the pods is not fully functional, which shows the struggle of setting up a \ac{Windows} based cluster.
 
-The containerization of \ac{OT} uncovered some pitfalls as well. For example, the application was adapted based on the requirements of the container network.
+The results showed many complications that one has to be aware of. This includes missing quality in documentation and difficulties in the error handling of the \ac{K8s} systems. When it comes to the community, it is hard to find help for the special case with ContainerD on \ac{Windows}. This might be reasonable due to the small size of the community. From this point of view it is obvious that \ac{Windows} is not fully supported on \ac{K8s} yet.
 
-% TODO: Proof bringen, dass community klein ist und viele tickets wegen triage geschlossen werden. und unbeantwortet bleiben.
+
+
+
+
+In general the thesis comes to the result that the development of a cluster with \ac{Windows} nodes using ContainerD is still in a prototype state. ContainerD is just not fully established yet in the area of \ac{Windows} clustering and therefore comes with problems. Furthermore, it proofs that implementing a cluster with \ac{Windows} nodes is a process that requires special treatment. 
+
+% TODO: Proof in "Results" bringen, dass community klein ist und viele tickets wegen triage geschlossen werden. und unbeantwortet bleiben.
 
 \section{Future work}
-The results showed that there are still some points open. Moreover there are plenty of opportunities using the findings as a basis and implement a full functional cluster on top of it. This section mentions what can be optimized in the future and provides an outcast for future implementations.
+The results showed that there are still some points open. Using the findings as a basis, there are plenty of opportunities to implement a cluster and enhance it in the future. This section mentions what can be optimized in the future and provides an outcast for future implementations.
+First, further investigation has to be done on the network connectivity of the pods. Currently, there is no functional domain name system within the \ac{K8s} cluster, because the Kube-Proxy does not work in combination with Flannel on \ac{Windows}.
+
+For a production environment, the certificates should not be build as part of the container image build process. Instead the certificate files should be injected into the container file system via mounts.
+
+Moreover, the images size should be more reduced, because roughly three gigabyte per image can cause problems later on. For example, when using a central image repositories like Artifactory\footnote{Artifactory: https://jfrog.com/de/artifactory/} this would reduce the required storage space and the download duration during an image pull. A first step in this direction can be to only keep necessary dependencies in an image for a corresponding service.
+
+The development team currently works on porting \ac{OT} from \ac{Windows} to Linux.
+Since it was shown that a major problem is caused by the insufficient support of \ac{Windows} on \ac{K8s}, the development on the Linux port should be kept up. Majority of the faced problems might be solved on homogeneous Linux clusters.
+
+This might then also simplify the utilization of the graphic processing unit in \ac{K8s} pods. Since \ac{OT} performs complex computations on the graphics card, \ac{OT} would benefit from this change.
+
+In general, keeping an eye on the documentation of \ac{K8s} is crucial, since as shown in this thesis, the guides that can be found online are mostly still under development.
 
 
-- Images verkleinern - nur die Dateien ins Image bundlen, die für den entsprechenden Service notwendig sind.
-
-- Linux  port and cluster based on linux
-- Automated image building using Packer.io (for multiple platforms)
-- Ranger for streamlining kubernetes deployment
-- Put certificate files into container via file mount - Design?
-
-- Falls OT sowieso in Container gebaut werden muss, dann kann dieser Schritt auch automatisiert werden (clone aus git, bauen mit Build Tools)
-- Dann ist auch nicht mehr nötig, Deployment Verzeichnis manuell auf jeden Node zu kopieren.
+% - Automated image building using Packer.io (for multiple platforms)
+% - Ranger for streamlining kubernetes deployment
 
 
-- Blockzitat: K8s checkliste, zur korrekten Funktionsweise des Netwerks -> Funktioniert nicht
 
-- GPU einbinden für compute services?
+% - Falls OT sowieso in Container gebaut werden muss, dann kann dieser Schritt auch automatisiert werden (clone aus git, bauen mit Build Tools)
+% - Dann ist auch nicht mehr nötig, Deployment Verzeichnis manuell auf jeden Node zu kopieren.
 
