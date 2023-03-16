@@ -1938,12 +1938,8 @@ FUNCTION {format.url}
 FUNCTION {format.isbn}
 { isbn empty$
     { "" }
-    { this.to.prev.status
-      this.status.std
-      punct.period 'this.status.punct :=
-      bbl.isbn
-      "." * " " * 
-      "ISBN: " * isbn *
+    { 
+      "ISBN: " isbn *
     }
   if$
 }
