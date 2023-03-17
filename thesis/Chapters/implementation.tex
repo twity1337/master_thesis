@@ -126,11 +126,14 @@ WORKDIR C:/app/Deployment/Certificates
 COPY ./ ../
 RUN createCertificate.bat && certutil -addstore root %OPEN_TWIN_CA_CERT%
 WORKDIR C:/app/Deployment
-RUN C:\app\Deployment\VC_Redist\VC_redist.x64.exe /install /quiet
+RUN C:\app\Deployment\VC_Redist\VC_redist.x64.exe /install /quiet && \<*@ \Suppressnumber @*>
+    move opengl32sw.dll opengl32.dll<*@ \Reactivatenumber @*>
 \end{lstlisting}
 \autoref{lst:containerfile.3} shows the lower section of the container file for containerizing the \ac{LSS}.
 The container files differ in the runtime specification. They run the same entry point, but have a different process running as command. Besides, the exposed port depends on the service inside the container. 
-After defining the command and copying the files into the container image (lines 22-28), the certificates are built as part of the image file system (line 29). Since the compute services are dependent to C++ libraries that are not present in the base image, the Microsoft Visual C++ Redistributable must be installed as well (line 31).
+After defining the command and copying the files into the container image (lines 22-28), the certificates are built as part of the image file system (line 29).
+Since the compute services are dependent to C++ libraries that are not present in the base image, the Microsoft Visual C++ Redistributable must be installed as well (line 31).
+The second command of this line performs the renaming of the OpenGL software rendering \ac{DLL}. This is necessary, because OpenGL version 2.0 is not available inside the container.
 
 % Container image must be built on each node machine manually. Since the Windows base image os is only compatible with the respective host \ac{OS}.
 % Deployment-Verzeichnis muss dafür initial auf Node kopiert werden.

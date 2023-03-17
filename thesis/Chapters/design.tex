@@ -105,14 +105,20 @@ A terminated pod automatically gets restarted based on a configured restart poli
 
 
 \subsection{Cluster networking}
-% TODO: Architecture diagram about cluster networking!
-Cluster networking is achieved using two components: The network plugin and the \ac{CNI}. Pods receive their own \ac{IP} address and can communicate with other pods. However, this is not a functionality which is achieved by Kubernetes directly. By using a \ac{CNI} the automated generation of network addresses and their inclusion is achieved when new containers are create or destroyed. It is crucial that pods share the same subnet across all the nodes in a cluster and \ac{NAT} is avoided\cite{Luksa.2018}.
+Cluster networking is achieved using two components: The network plugin and the \ac{CNI}. Pods receive their own \ac{IP} address and can communicate with other pods. However, this is not a functionality which is achieved by \ac{K8s} directly. By using a \ac{CNI} the automated generation of network addresses and their inclusion is achieved when new containers are create or destroyed. It is crucial that pods share the same subnet across all the nodes in a cluster and \ac{NAT} is avoided\cite{Luksa.2018}.
 
 Network plugins do implement the \ac{CNI}. They usually come with a manifest for a daemon set that introduces a network agent on all nodes inside the cluster to support the network communication.
 For setting up the network interface, namespace and its \ac{IP} address, a dedicated container image is used. This is called the \enquote{pause container} image.
 
 \paragraph*{Flannel}
-Flannel\footnote{Flannel: https://github.com/flannel-io/flannel} was originally developed as part from Fedora CoreOS\footnote{CoreOS: https://getfedora.org/en/coreos}\cite{SuseRancherCommunity.20230212}. It works with various backends for transferring packets in the internal network. Two possible backends are virtual extensible Local Area Network (\enquote{vxlan}) and host gateway (\enquote{host-gw}). While \enquote{host-gw} needs an existing infrastructure and performs routing on the layer 3 network level, VXLAN is more flexible and could also be used in cloud environments\cite{GitHubFlannel.io.20230212}. VXLAN is an overlay protocol and encapsulates layer 2 Ethernet frames within datagrams\cite{SuseRancherCommunity.20230212}. It is similar to regular VLAN, but offers more than 4,096 network identifiers\cite{SuseRancherCommunity.20230212}. Thus, VXLAN is a good choice for highly scalable systems.
+Flannel\footnote{Flannel: https://github.com/flannel-io/flannel} was originally developed as part from Fedora CoreOS\footnote{CoreOS: https://getfedora.org/en/coreos}\cite{SuseRancherCommunity.20230212}. It works with various backends for transferring packets in the internal network. Two possible backends are virtual extensible Local Area Network (\enquote{vxlan}) and host gateway (\enquote{host-gw}). While \enquote{host-gw} needs an existing infrastructure and performs routing on the layer 3 network level, VXLAN is more flexible and could also be used in cloud environments\cite{GitHubFlannel.io.20230212}. As shown in \autoref{fig:design.flannel-network}, VXLAN is an overlay protocol and encapsulates layer 2 Ethernet frames within datagrams\cite{SuseRancherCommunity.20230212}. It is similar to regular VLAN and offers more than 4,096 network identifiers\cite{SuseRancherCommunity.20230212}. Thus, VXLAN is a good choice for highly scalable systems.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=.95\textwidth]{Figures/flannel-network.pdf}
+	\caption{Flannel overlay network architecture for \ac{K8s}\cite{Schott.2019}. The pods have their own \ac{IP} address range and traffic gets routed through a VXLAN tunnel.}
+	\label{fig:design.flannel-network}
+\end{figure}
 
 Even though, the team behind \ac{K8s} do not recommend any specific network plugin, there are only a few common network plugins widely used. The amount of available \ac{CNI} plugins is even more reduced if the support for \ac{Windows} nodes is taken into account.
 
