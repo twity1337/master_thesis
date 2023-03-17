@@ -11,7 +11,20 @@
 \lhead{Chapter  \ref*{chap:introd}. \emph{Introduction}} % This is for the header on each page - perhaps a shortened title
 
 
-With the deployment of applications on distributed systems, they can nowadays profit from more reliability and availability. Additionally, the services can gain a higher performance due to horizontal scaling mechanisms. This means, instead of increasing performance by upgrading the hardware, the services are accessible on multiple servers.
+The containerization of applications became more and more popular in the recent decade. Running applications in an isolated environment makes them more easy to manage and easier to deploy. The lightweight method of isolating processes is the basis for deploying applications on a cluster environment.
+Deployed applications on distributed systems can nowadays profit from more reliability and availability. Additionally, the services can gain a higher performance due to horizontal scaling mechanisms. This means, instead of increasing performance by upgrading the hardware, the services are accessible on multiple servers.
+By having a microservice architecture, complex systems are well prepared for a distributed system. The several services of the application are responsible for just their own task and thus can be scaled horizontally.
+
+This thesis explores the feasibility of deploying a \ac{Windows} based microservice application on a cluster and gives an overview about the faced challenges. The feasibility is showcased on the basis of \ac{OT}. \ac{OT} is a distributed application for computer aided design and physics simulation, where the computations can be done server-side, while the operation by the user stays client-side.
+
+The majority of deployments is still performed on Linux, even though deploying applications for \ac{Windows} is gaining more and more demand. Recently Microsoft introduced with \enquote{Windows Containers} its own container technology\cite{Microsoft.2022} and \ac{K8s} announced the drop of Docker support\cite{Kubernetes.2020}. Subsequently, the container technology on \ac{Windows} shifted towards Windows Containers.
+Since \ac{OT} is based on \ac{Windows}, the deployment has to be achieved there as well. As a consequence, the cluster is added 
+
+
+\begin{comment}
+Nevertheless, the benefits come with the price of required application changes and higher system requirements.
+
+Because 
 Microservice applications consist of multiple services where each service fulfills its specific task. They meet the requirements for 
 
 
@@ -34,7 +47,7 @@ The thesis examines the challenges involved in deploying such an application on 
 
 
 The research field of cluster deployment with ContainerD is still in the beginning state for \ac{Windows}.
-
+\end{comment}
 
 Through this work, the thesis aims to provide a valuable resource for research groups who want to deploy applications on Windows using common cluster management tools.
 

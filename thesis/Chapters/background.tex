@@ -74,7 +74,7 @@ Each service runs in its own \ac{OS} process.
 
 The Visualization Service requires features from version 2.0 of the graphics library OpenGL\footnote{OpenGL: https://opengl.org/}. Systems where no graphics card is installed or systems that run a server \ac{OS} do not have OpenGL 2.0 available. For these environments the \ac{DLL} file \enquote{opengl32sw.dll} in the installation directory can be renamed to \enquote{opengl32.dll}. This enables software rendering and allows system to run \ac{OT} that do not meet this requirement.
 
-As shown in \autoref{fig:ot-network-communication-diagram}, the services can be separated by their network space on multiple layers. Not all services require a public available network address.
+As shown in \autoref{fig:ot-network-communication-diagram}, the services can be separated by their network space on multiple levels. Not all services require a public available network address.
 While \ac{GSS}, \ac{AUTH} and database are globally accessible via a fixed network address, the \ac{LSS} can theoretically run on a dedicated host and is only communicated to other parties after it has registered itself to the \ac{GSS}. The services, spawned by \ac{LSS} do not require a public address space either. All communication between the \ac{UI} front end and the compute services is achieved via a relay service and a web socket communication channel.
 
 \begin{figure}[ht]
