@@ -78,7 +78,7 @@ To be more precise, there is partially work in progress and while consuming the 
 For example, this became fundamental on the page \enquote{Adding Windows nodes}\cite{Kubernetes.20220419}. At the current time being, the actual page is only available as an archived version for \ac{K8s} version \enquote{v1.23}. However, if the same \ac{URL} is called for the unarchived version, the user gets redirected to a similar page \enquote{Creating a cluster with kubeadm}\cite{Kubernetes.20221107}. This can easily happen if a link is followed from an issue or a web search. Reading the page, people could assume that they can follow the steps described there to add a \ac{Windows} node to a cluster. However, the fact that the guide is aligned to Linux is only barely mentioned and thus is misleading.
 That also means that there is no guide for adding \ac{Windows} nodes in the current version of the documentation of \ac{K8s}.
 
-The guide for adding \ac{Windows} nodes provided from \ac{SIG} \enquote{Windows Tools}\cite{GitHubKubernetesSIGWindowsTools.20230213} has a more streamlined approach and benefits from provided PowerShell scripts, like \enquote{PrepareNode.ps1} (which is used in \autoref{chap:implementation.setup_worker}). However, due to the small community, the guide still stays faulty or outdated. For example, the guide shows a warning, \enquote{The instructions and scripts in the directory DO NOT configure a CNI solution for Windows nodes running containerd. There is a work-in-progress PR to assist in this at \#239}\cite{GitHubKubernetesSIGWindowsTools.20230213}. But the guide does explain how to configure a \ac{CNI} and the linked pull request is merged since December 2022. Thus, the warning is misleading.
+The guide for adding \ac{Windows} nodes provided from \ac{SIG} \enquote{Windows Tools}\cite{GitHubKubernetesSIGWindowsTools.20230213} has a more streamlined approach and benefits from provided PowerShell scripts, like \enquote{PrepareNode.ps1} (which is used in \autoref{chap:implementation.setup_worker}). However, due to the small community\cite{Github.2022}, the guide still stays faulty or outdated. For example, the guide shows a warning, \enquote{The instructions and scripts in the directory DO NOT configure a CNI solution for Windows nodes running containerd. There is a work-in-progress PR to assist in this at \#239}\cite{GitHubKubernetesSIGWindowsTools.20230213}. But the guide does explain how to configure a \ac{CNI} and the linked pull request is merged since December 2022. Thus, the warning is misleading.
 Furthermore, it reads \enquote{Do not forget to add --cri-socket [\dots] at the end of the join command, if you use ContainerD}\cite{GitHubKubernetesSIGWindowsTools.20230213}. The explicit appending of the \ac{CRI} socket however is not necessary for versions higher than \enquote{v1.25} as mentioned in \autoref{chap:implementation.setup_worker}.
 
 % TODO: Powershell scripts use git, but git is not installed. Errors need to be masked.
@@ -115,6 +115,19 @@ Also, since Rust cannot catch foreign exceptions, they cannot be exchanged betwe
 
 
 \section{Analysis}
-% Network - Checklist
-% Open points?
-- The Kube-Proxy does not work in combination with Flannel on \ac{Windows}.  % Beleg?
+The evaluation of the results shows, that a containerized deployment on \ac{Windows} is still in a early state. Even though, Docker and its \ac{CRI} was used for a long time, containerization using \ac{Windows} host process isolation is not convenient and error resilient.
+
+\ac{K8s} provides a checklist for testing the connectivity\cite{Kubernetes.20221205}. In this checklist the following points for checking connectivity should be performed after applying an application manifest on the cluster:
+\begin{enumerate}
+	\item Pods are shown in \tcode{kubectl}\cite{Kubernetes.20221205}
+	\item Node-to-pod communication across the network\cite{Kubernetes.20221205}
+	\item Pod-to-pod communication\cite{Kubernetes.20221205}
+	\item Service-to-pod communication\cite{Kubernetes.20221205}
+	\item Service discovery\cite{Kubernetes.20221205}
+	\item Inbound connectivity\cite{Kubernetes.20221205}
+	\item Outbound connectivity\cite{Kubernetes.20221205}
+\end{enumerate}
+
+In the above checklist, only the listing of nodes and the pod-to-pod and node-to-pod communication is working after following the instructions. The pods are accessible by their direct \ac{IP} address, whereas host names are not resolved. It turns out, the connectivity of the pods in the developed cluster is lacking domain name resolution. During the investigation, the Kube-Proxy did not work in combination with Flannel on \ac{Windows}.
+However, support is rare, because the community is still small and therefore the development team is overloaded\cite{GitHub.2023, GitHub.2022}. As a consequence, some of the tracked issues on the GitHub project website are not solved and closed out of triage\cite{GitHub.2023, GitHub.2022}.
+
