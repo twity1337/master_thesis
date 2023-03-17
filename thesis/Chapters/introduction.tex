@@ -15,11 +15,18 @@ The containerization of applications became more and more popular in the recent 
 Deployed applications on distributed systems can nowadays profit from more reliability and availability. Additionally, the services can gain a higher performance due to horizontal scaling mechanisms. This means, instead of increasing performance by upgrading the hardware, the services are accessible on multiple servers.
 By having a microservice architecture, complex systems are well prepared for a distributed system. The several services of the application are responsible for just their own task and thus can be scaled horizontally.
 
-This thesis explores the feasibility of deploying a \ac{Windows} based microservice application on a cluster and gives an overview about the faced challenges. The feasibility is showcased on the basis of \ac{OT}. \ac{OT} is a distributed application for computer aided design and physics simulation, where the computations can be done server-side, while the operation by the user stays client-side.
+This thesis explores the feasibility of deploying a \ac{Windows} based microservice application on a cluster and gives an overview about the faced challenges. The feasibility is showcased on the basis of \ac{OT}. \ac{OT} is a distributed application for computer aided design and physics simulation. The application is distributed, thus computations can be done server-side, while the operation by the user stays client-side.
+Accordingly, the orchestration has to take the multi-level architecture into account. This means that some services should only accessible in a private network space and do not require a public \ac{IP} address, while others have to be publicly available. Further, the communication has to be achieved bidirectional. Considering that clients are often protected by a firewall and located behind \ac{NAT}, this is another challenge to face.
+Additionally, the architecture of \ac{OT} is adaptive by automatically spawning new processes where they are needed. Hence the application is performing an implicit load balancing based on the system resources.
+Because security requirements have to be met, the network communication of \ac{OT} is encrypted with mutual authentication. Using the two-sided encryption ensures authenticity on both sides, the client and the server. The deployment has to take this into account, by distributing and creating certificates for each service and sharing them across the cluster.
 
-The majority of deployments is still performed on Linux, even though deploying applications for \ac{Windows} is gaining more and more demand. Recently Microsoft introduced with \enquote{Windows Containers} its own container technology\cite{Microsoft.2022} and \ac{K8s} announced the drop of Docker support\cite{Kubernetes.2020}. Subsequently, the container technology on \ac{Windows} shifted towards Windows Containers.
-Since \ac{OT} is based on \ac{Windows}, the deployment has to be achieved there as well. As a consequence, the cluster is added 
+The majority of deployments is still performed on Linux, even though applications orchestration for \ac{Windows} is gaining more and more demand. Recently Microsoft introduced with \enquote{Windows Containers} its own container technology\cite{Microsoft.2022}. Since the common orchestration \acf{K8s} dropped the support for Docker containers, the requested container technology on \ac{Windows} shifted towards Windows Containers\cite{Kubernetes.2020}.
+\ac{OT} is based on \ac{Windows}, and thus the orchestration and containerization has to be aligned towards Windows Containers. Hence this is a fundamental task of this thesis.
 
+Because of the recent change in isolation techniques, the previous research in this field is sparse. The documentations and guides are mostly based on the containerization using Docker and do not take the problems of the native container technology into account. 
+Thus, the thesis aims to provide a valuable resource for research groups and developers who want to deploy applications using the modern Windows Container technology.
+
+Another aspect is the introduction of a cluster using \ac{Windows} as compute nodes. Finding an orchestration engine with full support for \ac{Windows} is difficult. As shown in this thesis, \ac{K8s} as chosen orchestration engine also has struggles adding \ac{Windows} nodes into the cluster.
 
 \begin{comment}
 Nevertheless, the benefits come with the price of required application changes and higher system requirements.
@@ -49,17 +56,14 @@ The thesis examines the challenges involved in deploying such an application on 
 The research field of cluster deployment with ContainerD is still in the beginning state for \ac{Windows}.
 \end{comment}
 
-Through this work, the thesis aims to provide a valuable resource for research groups who want to deploy applications on Windows using common cluster management tools.
 
 % TODO: Wenig vorarbeiten
 % TODO: Multi-layer to explain
 
-\section{Scope}
-\section{Intended audience}
 
 
-\section{Outline}
-The first chapter (\autoref{chap:background}) of the thesis provides a brief introduction into \ac{OT} and its architecture. Furthermore, it introduces its encryption protocol and gives an outline about the thesis. In \autoref{chap:design} the major design decisions are explained. It dives into the used container engine and the chosen cluster management software and their alternatives.
+
+The next chapter (\autoref{chap:background}) of the thesis provides a brief introduction into \ac{OT} and its architecture. Furthermore, it introduces its encryption protocol and gives an outline about the overall topic. In \autoref{chap:design}, the major design decisions are explained. It dives into the used container engine and the chosen cluster management software and their alternatives.
 The design decisions are implemented in \autoref{chap:implementation}. This is where the application is adapted by the required changes. The application is containerized, and the cluster is set up. Moreover, the probed options for designing the cluster are presented and the deployment of an application is shown.
 The findings are discussed in \autoref{chap:results}. A deeper look is taken in challenges that occurred during the implementation and the underlying reasons.
-The thesis ends with \autoref{chap:conclusion} and gives an overview about the learned lessons and the conclusion. Additionally, it shows points of contact for future work.
+The thesis ends with \autoref{chap:conclusion} and gives an overview about the conclusion and future work.

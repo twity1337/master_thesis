@@ -157,7 +157,15 @@
 \usepackage[pdfpagemode={UseOutlines},bookmarks=true,bookmarksopen=true,
    bookmarksopenlevel=0,bookmarksnumbered=true,hypertexnames=false,
    colorlinks,linkcolor={blue},citecolor={blue},urlcolor={red},
-   pdfstartview={FitV},unicode,breaklinks=true]{hyperref}
+   pdfstartview={FitV},unicode,breaklinks=true
+   pdftex,
+	pdfauthor={Tim Wißmann},
+	pdftitle={Containerized multi-level deployment for a distributed adaptive microservice application},
+	pdfsubject={Master thesis in computer science, Frankfurt University of Applied Sciences},
+	pdfkeywords={master thesis, computer sciences, kubernetes, docker, containerd},
+	pdfproducer={Latex with hyperref},
+	pdfcreator={pdflatex}
+   ]{hyperref}
 \pdfstringdefDisableCommands{
    \let\\\space
 }

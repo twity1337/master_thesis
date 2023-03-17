@@ -6,19 +6,23 @@
 
 \lhead{Chapter \ref*{chap:conclusion}. \emph{Conclusion and future work}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
 
-\section{Lessons learned}
+This chapter will conclude the final results, and provides an outlook for the future.
+
+% \section{Lessons learned}
+% During the work on the thesis, there were some aspects that might be relevant for other people who work in this topic.
+% First of all, 
 % man kann sich hier auch wiederholen; für leute, damit sie nicht nochmal die gleichen fehler machen-
 
 \section{Conclusion}
 This thesis shows a proof of concept for deploying a microservice application. 
 The application under study is a distributed modeling software that works with services on multiple layers.
-The application comes with a \ac{UI} Frontend which acts as a client, and  several services that run on a a centralized server. The server services spawn compute services for delivering the actual results and data.
+The application comes with a \ac{UI} front end which acts as a client, and  several services that run on a a centralized server. The server services spawn compute services for delivering the actual results and data.
 
 In the beginning of this thesis the application was given in a locally installed manner. First tests already showed that the application is able to run on a distributed system. 
 The program was containerized using standard container technology from Docker and ContainerD. In the first prototype, the main services for \ac{GSS}, \ac{AUTH} and \ac{LSS} were shifted into a containerized environment.  
-The containerization of \ac{OT} uncovered some problems. For example, the application had to be adapted to the requirements of the container network. This involves a change of the server binding to all interfaces, to be able to host the service inside a containerized environment, but also the change of the process exit behavior. Furthermore, the general product quality was improved.
+The containerization of \ac{OT} uncovered some problems. For example, the application had to be adapted to the requirements of the container network. This involves a change of the server binding to all interfaces, to be able to host the service inside a containerized environment, but also the change of the process exit behavior.
 
-The Hyper-V isolation shipped with \ac{Windows} abstracts some issues with the underlying container isolation and also flattens the requirement of having the same \ac{OS} kernel on the host system and inside the container. Problems on the \ac{OS} level are mostly solved and inputs are properly validated so that errors are more understanding.
+The Hyper-V isolation shipped with \ac{Windows} abstracts some issues with the underlying container isolation and also flattens the requirement of having the same \ac{OS} kernel on the host system and inside the container. Problems on the \ac{OS} level are mostly solved and inputs are properly validated so that errors are more understandable.
 The host-process isolation, however, is providing a pure abstraction layer to the containers. This means that processes inside the container are not virtualized and still use parts of the host system.
 This hides pitfalls as, for example, networking is not yet fully functional, and errors are sometimes confusing.
 
@@ -42,7 +46,8 @@ For a production environment, the certificates should not be build as part of th
 
 Moreover, the images size should be more reduced, because roughly three gigabyte per image can cause problems later on. For example, when using a central image repositories like Artifactory\footnote{Artifactory: https://jfrog.com/de/artifactory/} this would reduce the required storage space and the download duration during an image pull. A first step in this direction can be to only keep necessary dependencies in an image for a corresponding service.
 
-Since the compute services of \ac{OT} are not yet containerized each, horizontal scaling of the application is barely possible. Having a container image for each compute service, would allow having multiple replicas for the compute services and therefore would improve scaling.
+Since the compute services of \ac{OT} are not yet containerized each, horizontal scaling of the application is is currently not possible. Having a container image for each compute service, would allow having multiple replicas for the compute services and therefore would improve scaling.
+%Under this aspect, the automatic load balancing of \ac{OT} should be taken into account. New pods 
 
 The development team currently works on porting \ac{OT} from \ac{Windows} to Linux.
 Since it was shown that a major problem is caused by the insufficient support of \ac{Windows} on \ac{K8s}, the development on the Linux port should be kept up. Majority of the faced problems might be solved on homogeneous Linux clusters.

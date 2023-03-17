@@ -4,16 +4,16 @@
 \label{chap:design} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
 
 \lhead{Chapter \ref*{chap:design}. \emph{System design}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
-Various applications for realizing the architecture have been compared. In the following sections the different options that were taken into account are presented.
+Various applications for realizing the architecture have been compared. These are mainly the orchestration engine and the container runtime. Additionally, the network driver is chosen. In the following sections the different options that were taken into account are presented and explained in detail.
 
 \section{Orchestration engine}
-Orchestration engines aggregate the processes and tools that are used to distribute services across multiple machines. Further, multiple replications are provided to maintain reliability. In addition, some solutions offer load balancing of incoming requests and network interconnection.
+Orchestration engines aggregate the processes and tools that are used to distribute services across multiple machines. Further, multiple replications are provided to maintain reliability for overloaded systems. Mirroring on multiple hosts can ensure fail-safety in the case one host goes down. In addition, some solutions offer load balancing of incoming requests and network interconnection.
 What all of these engines have in common is that a group of virtual machines or containers, known as \enquote{nodes}, are managed from a central spot. An administrator directs what application is run on the cluster. Based on the application's metadata, the orchestration engine then decides where to run the application by selecting a node inside that cluster.
 
 \subsection{Hyper-V Replication} Microsoft \ac{Windows} supports a replication mechanism for virtual machines hosted by Hyper-V. The existing virtual machines are mirrored to secondary virtual machine host servers which highers scalability and reliability. Therefore, by replicating to a secondary Hyper-V host server, enabling process continuity and recovery on outages is ensured.
 Although there are benefits, like scalability and recovery, Hyper-V is mainly designed for virtual machines. Therefore, the cluster management solution is not applicable for this use case.
 
-\subsection{Docker Swarm} \enquote{Docker Swarm} is a cluster and orchestration engine for the container service \enquote{Docker}. The offered extension mode has more features compared to the Hyper-V replication and is specialized for containers. For example, Load Balancing, increased fault tolerance and automatic service discovery.
+\subsection{Docker Swarm} \enquote{Docker Swarm} is a cluster and orchestration engine for the container service \enquote{Docker}. The offered extension mode has more features compared to the Hyper-V replication and is specialized for containers. For example, load balancing, increased fault tolerance and automatic service discovery.
 A highlighted feature among Docker Swarm is the decentralized design. That means, manager and application service can both run on any node within the cluster. Since it comes with Docker, no additional installation is required if Docker is already installed on the system.
 However, since it is bound to the Docker \ac{API}, using this orchestration technology involves the risk of inflexibility later on (\enquote{vendor lock-in}).
 
@@ -22,19 +22,19 @@ However, since it is bound to the Docker \ac{API}, using this orchestration tech
  
 % andere sind mit Funktionsumfang sehr limitiert?
 \subsection{Kubernetes}
-\acf{K8s} is a orchestration engine similar to \enquote{Docker Swarm}. Load balancing, auto-scaling and automatic service discovery are also offered. However, \ac{K8s} additionally comes with the ability to rollback to a previous version in a product life cycle and has built-in support for auto-scaling.
-However, \ac{K8s} has more sophisticated configuration options which makes it harder to configure in the beginning.
-
+\acf{K8s} is an orchestration engine similar to \enquote{Docker Swarm}. Load balancing, auto-scaling and automatic service discovery are also offered. However, \ac{K8s} additionally comes with the ability to rollback to a previous version in a product life cycle and has built-in support for auto-scaling.
+However, \ac{K8s} has more sophisticated configuration options which makes it more complex to configure in the beginning.
+Because \ac{K8s} clusters are usually hosted on premise, the risk of a vendor lock-in is mostly eliminated.
 
 The engine of choice was \ac{K8s} because of its rich feature set.
-Also studies showed that \ac{K8s} outperforms Docker Swarms when it comes to performance. For example, Marathe et.~al.~\cite{Marathe.2019} compared a simple web server service deployed on a Docker Swarm cluster with a \ac{K8s} cluster. The results showed better performance for \ac{K8s} in terms of memory consumption and CPU usage. Another study of Kang~et.~al.~\cite{Kang.2021} compared the performance of Docker Swarm and \ac{K8s} in a limited computing environment on Raspberry Pi boards. They also concluded that \ac{K8s} outperforms Docker Swarm if used with a high amount~(=30) of service containers on 3~Pi boards~\cite{Kang.2021}. Since they focused on container distribution and management methods this might get handy in the use case scenario under study.
+Studies also showed that \ac{K8s} outperforms Docker Swarms when it comes to performance. For example, Marathe et.~al.~\cite{Marathe.2019} compared a simple web server service deployed on a Docker Swarm cluster with a \ac{K8s} cluster. The results showed better performance for \ac{K8s} in terms of memory consumption and CPU usage. Another study of Kang~et.~al.~\cite{Kang.2021} compared the performance of Docker Swarm and \ac{K8s} in a limited computing environment on Raspberry Pi boards. They also concluded that \ac{K8s} outperforms Docker Swarm if used with a high amount~(=30) of service containers on 3~Pi boards~\cite{Kang.2021}. Since they focused on container distribution and management methods this might get handy in the use case scenario investigated here.
 
 
 \section{Kubernetes}
 Since \ac{K8s} is the chosen orchestration engine, the following sections are taking a deeper look inside its architecture.
 
 \subsection{Entities}
-There are many entities for objects inside the cluster. For description of those entities the configuration language YAML\footnote{YAML: https://yaml.org/} is used. Some of the most widely used entities are described in the following paragraphs.
+\ac{K8s} offers many entities for management objects inside the cluster. For description of those entities the configuration language YAML\footnote{YAML: https://yaml.org/} is used. Some of the most widely used entities are described in the following paragraphs.
 
 \paragraph*{Pod} A pod represents a set of running containers on a node. Each pod has additional information stored, such as Health state, the cluster internal network \ac{IP} address or the amount of replications.
 \paragraph*{Deployment}
@@ -46,7 +46,7 @@ Deployments are used to define declarative states for Pods. This allows to maint
 
 
 \subsection{Services}
-\ac{K8s} comes with a set of core services (see \autoref{fig.kubernetes-architecture}) that ensure the life span of scheduled containers, and the compute services that offer the actual application.
+\ac{K8s} comes with a set of core services (see \autoref{fig.kubernetes-architecture}) that ensure the life span of scheduled containers and the compute services that offer the actual application.
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=.95\textwidth]{Figures/kubernetes-architecture.pdf}
@@ -54,16 +54,16 @@ Deployments are used to define declarative states for Pods. This allows to maint
 	\label{fig.kubernetes-architecture}
 \end{figure}
 
-In the following paragraphs, the crucial services are described in detail. Since every service is a pod, they can have multiple replicas. Only the core service have to run on a dedicated Linux node the so called \enquote{control plane node} or \enquote{master node}. The underlying \ac{OS} must be Linux, because \ac{Windows} is not supported as control plane. The other services can run on nodes (with any \ac{OS}) for executing the applications and perform computations (\enquote{compute node} or \enquote{worker node}).
+In the following paragraphs, the crucial services are described in detail. The so called \enquote{control plane node} or \enquote{master node} is the node where core services of \ac{K8s} are located. The underlying \ac{OS} must be Linux, because \ac{Windows} is not supported for the control plane. The other services can run on nodes (with any \ac{OS}) for executing the applications and perform computations (\enquote{compute node} or \enquote{worker node}). Since every service is a pod, they can have multiple replicas.
 
 The services are controlled by the \ac{CLI} tools \enquote{kubectl} and \enquote{kubeadm}. While \enquote{kubectl} controls the deployment of services and application on the cluster, \enquote{kubeadm} is for setting up the cluster initially.
-Furthermore, the tool \enquote{crictl} can be separately installed for the inspection of the local \ac{CRI} on a node. It allows insights into the  containers and images, but also into locally installed pods. Additionally, pods and containers can be managed using this tool.
+Furthermore, the tool \enquote{crictl} can be installed separately for the inspection of the local \ac{CRI} on a node. It allows insights into the containers and images, but also into locally running pods. Additionally, pods and containers can be managed using this tool.
 
 \paragraph*{etcd}
 The etcd\footnote{etcd: https://etcd.io/} database server is a key-value store designed for distributed systems\cite{Luksa.2018}. That means it could run with multiple replications and would still be able to keep a persistent storage synchronized across multiple instances. It contains the applied configuration of several cluster entities (e.g. User configurations, deployments, pod configurations).
 
 \paragraph*{API server}
-This is a RESTful web server that serves the Kubernetes \ac{API} via \ac{HTTP}\cite{Kubernetes.20221024}. It is the central joint between the services and establishes communication between users, external components and other core services. It makes the objects stored in etcd accessible over an Open \ac{API} specification\cite{Luksa.2018,OpenAPIInitiative.20230210} and allows observing changes on the entities. The \ac{CLI} tools \enquote{kubectl} and \enquote{kubeadm} both interact with the \ac{API} server.
+This is a RESTful web server that serves the \ac{K8s} \ac{API} via \ac{HTTP}\cite{Kubernetes.20221024}. It is the central joint between the services and establishes communication between users, external components and other core services. It makes the objects stored in etcd accessible through an Open \ac{API} specification\cite{Luksa.2018,OpenAPIInitiative.20230210} and allows observing changes on the entities. The \ac{CLI} tools \enquote{kubectl} and \enquote{kubeadm} both interact with the \ac{API} server.
 
 \paragraph*{Kubelet} Kubelet is the service on the \ac{OS} level that maintains the pod life cycle and ensures the runtime of a container inside a pod. Furthermore, it manages the registration of the node to the control plane and reports its health and pod status to the \ac{API} server.
 
@@ -76,7 +76,7 @@ This is a RESTful web server that serves the Kubernetes \ac{API} via \ac{HTTP}\c
 
 \subsection{Pod life cycle}
 \label{chap:design.life_cycle}
-Similar to the underlying application container, Pods in \ac{K8s} have a ephemeral lifetime\cite{Kubernetes.20230217}. After creation on the cluster, a unique identifier is assigned before a pod gets scheduled to an available node\cite{Kubernetes.20230217}. The pod keeps alive until its termination or deletion\cite{Kubernetes.20230217}.
+Similar to the underlying application container, Pods in \ac{K8s} have a ephemeral lifetime\cite{Kubernetes.20230217}. After creation on the cluster, a unique identifier is assigned before a pod gets scheduled to an available node\cite{Kubernetes.20230217}. The pod is kept alive until its termination or deletion\cite{Kubernetes.20230217}.
 For distinguishing different kind of states of a pod life cycle, \ac{K8s} defines the pod states as described in \autoref{tbl:k8s-pod-states}.
 
 \begin{table}[h!]
@@ -105,33 +105,34 @@ A terminated pod automatically gets restarted based on a configured restart poli
 
 
 \subsection{Cluster networking}
-Cluster networking is achieved using two components: The network plugin and the \ac{CNI}. Pods receive their own \ac{IP} address and can communicate with other pods. However, this is not a functionality which is achieved by \ac{K8s} directly. By using a \ac{CNI} the automated generation of network addresses and their inclusion is achieved when new containers are create or destroyed. It is crucial that pods share the same subnet across all the nodes in a cluster and \ac{NAT} is avoided\cite{Luksa.2018}.
+Cluster networking is achieved using two components: The network plugin and the \ac{CNI}. Pods receive their own \ac{IP} address and can communicate with other pods. However, this is not a functionality which is achieved by \ac{K8s} directly. By using a \ac{CNI} the automated generation of network addresses and their inclusion is achieved when new containers are created or destroyed. It is crucial that pods share the same subnet across all the nodes in a cluster and \ac{NAT} is avoided\cite{Luksa.2018}.
 
 Network plugins do implement the \ac{CNI}. They usually come with a manifest for a daemon set that introduces a network agent on all nodes inside the cluster to support the network communication.
 For setting up the network interface, namespace and its \ac{IP} address, a dedicated container image is used. This is called the \enquote{pause container} image.
 
 \paragraph*{Flannel}
-Flannel\footnote{Flannel: https://github.com/flannel-io/flannel} was originally developed as part from Fedora CoreOS\footnote{CoreOS: https://getfedora.org/en/coreos}\cite{SuseRancherCommunity.20230212}. It works with various backends for transferring packets in the internal network. Two possible backends are virtual extensible Local Area Network (\enquote{vxlan}) and host gateway (\enquote{host-gw}). While \enquote{host-gw} needs an existing infrastructure and performs routing on the layer 3 network level, VXLAN is more flexible and could also be used in cloud environments\cite{GitHubFlannel.io.20230212}. As shown in \autoref{fig:design.flannel-network}, VXLAN is an overlay protocol and encapsulates layer 2 Ethernet frames within datagrams\cite{SuseRancherCommunity.20230212}. It is similar to regular VLAN and offers more than 4,096 network identifiers\cite{SuseRancherCommunity.20230212}. Thus, VXLAN is a good choice for highly scalable systems.
+Flannel\footnote{Flannel: https://github.com/flannel-io/flannel} was originally developed as part from Fedora CoreOS\footnote{CoreOS: https://getfedora.org/en/coreos}\cite{SuseRancherCommunity.20230212}. It works with various backends for transferring packets in the internal network. Two possible backends are \ac{VxLAN} and host gateway (\enquote{host-gw}). While \enquote{host-gw} needs an existing infrastructure and performs routing on the layer 3 network level, \ac{VxLAN} is more flexible and could also be used in cloud environments\cite{GitHubFlannel.io.20230212}. As shown in \autoref{fig:design.flannel-network}, \ac{VxLAN} is an overlay protocol and encapsulates layer 2 Ethernet frames within datagrams\cite{SuseRancherCommunity.20230212}. On top of the physical (underlay) network, the \ac{VxLAN} network provides their own \ac{IP} subnet. It is similar to regular VLAN and offers more than 4,096 network identifiers\cite{SuseRancherCommunity.20230212}. Thus, \ac{VxLAN} is a good choice for highly scalable systems.
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=.95\textwidth]{Figures/flannel-network.pdf}
-	\caption{Flannel overlay network architecture for \ac{K8s}\cite{Schott.2019}. The pods have their own \ac{IP} address range and traffic gets routed through a VXLAN tunnel.}
+	\caption{Flannel overlay network architecture for \ac{K8s}\cite{Schott.2019}. The pods have their own \ac{IP} address range and traffic gets routed through a \ac{VxLAN} tunnel.}
 	\label{fig:design.flannel-network}
 \end{figure}
 
-Even though, the team behind \ac{K8s} do not recommend any specific network plugin, there are only a few common network plugins widely used. The amount of available \ac{CNI} plugins is even more reduced if the support for \ac{Windows} nodes is taken into account.
+Although the team behind \ac{K8s} does not recommend any specific network plugin, there are only a few common network plugins widely used. The amount of available \ac{CNI} plugins is even more reduced if the support for \ac{Windows} nodes is taken into account.
 
 \paragraph*{Calico}
-Compared to Flannel, Calico\footnote{Tigera's Calico: https://www.tigera.io/project-calico/} is stated to be more performative, flexible and powerful\cite{SuseRancherCommunity.20230212,Tigera.20230210}. Calico comes with a sophisticated access control system\cite{Tigera.20230210} and more configuration options. However, its advanced configuration makes it hard to maintain long-term.
+Compared to Flannel, Calico\footnote{Tigera's Calico: https://www.tigera.io/project-calico/} is stated to be more performative, flexible and powerful\cite{SuseRancherCommunity.20230212,Tigera.20230210}. Calico comes with a sophisticated access control system\cite{Tigera.20230210} and more configuration options. However, its advanced configuration makes it more complex to maintain long-term.
 
-For this use case, Flannel is used as network plugin, since it is the described plugin used in the documentations for setting up \ac{K8s} with \ac{Windows} containers\cite{GitHubKubernetesSIGWindowsTools.20230213,Kubernetes.20220419}. Hence, support for this \ac{CNI} plugin in relation with \ac{Windows} containers is assumed to be larger than with Calico.
+For this use case, Flannel is used as network plugin, since it is the more prominently used plugin used in the documentations for setting up \ac{K8s} with \ac{Windows} containers\cite{GitHubKubernetesSIGWindowsTools.20230213,Kubernetes.20220419}. Hence, support for this \ac{CNI} plugin in relation with \ac{Windows} containers is assumed to be larger than with Calico.
 
 
 
 
 \section{Container environment}
-The ecosystem around containerization defines terminology that needs to be looked at before going into details for \ac{K8s}. First of all, the \acf{CRI} defines the interface between \ac{K8s} and container runtime. Most of the container runtimes follow the design principles defined by the Open Container Initiative (OCI)\footnote{OCI: https://opencontainers.org/} for describing images and containers. The actual container runtime runs the isolation layer between the physical host machine and the \ac{K8s} cluster by using containerization of processes. This is what can be selected when working with \ac{K8s}.
+The ecosystem around containerization defines terminology that needs to be looked at before going into details for \ac{K8s}. First of all, the container runtime defines the isolation layer between the physical host machine and the \ac{K8s} cluster. The \acf{CRI} defines the interface between \ac{K8s} and container runtime. Most of the container runtimes follow the design principles defined by the Open Container Initiative (OCI)\footnote{OCI: https://opencontainers.org/} for describing images and containers.
+The container runtimes that are supported by \ac{K8s} are presented in this section.
 
 While \ac{K8s} used to support Docker as their standard container runtime, they announced it to be deprecated in 2020, and finally removed the support in February 2022\cite{Kubernetes.2020, Kubernetes.2022}. The teams behind \ac{K8s} decided to drop the hard coded support for Docker and offer ContainerD instead.
 However, the specification for ContainerD's \enquote{Containerfile} has only minor differences compared to Docker's \enquote{Dockerfile}. Thus, ContainerD files are fully compatible to docker files.
@@ -139,10 +140,18 @@ However, the specification for ContainerD's \enquote{Containerfile} has only min
 Some of the container runtimes offered by \ac{K8s} are not available for \ac{Windows} hosts. For example, Linux containers (LXC)\footnote{LXC: https://linuxcontainers.org/} use process groups, \acp{cgroup} and name spaces on the \ac{OS} level.
 The \ac{CRI} from the Open Container Initiative (CRI-O)\footnote{CRI-O: https://cri-o.io/} is another alternative offered for \ac{K8s} on Linux systems. Since those are not available in \ac{Windows}, they are not further considered.
 
-At the current time being, container networking with ContainerD is not well-established on \ac{Windows}~\cite{GitHub.20230202,GitHub.20230202b,Github.2022_258,GitHub.20230202c} even though the docker runtime is already removed in current versions of \ac{K8s}~\cite{Kubernetes.2020}. However, these are the only two working container backends for \ac{Windows} containers. Therefore ContainerD as container backend was chosen.
+
+\subsection{Docker Container Runtime Interface}
+The Docker \ac{CRI} (so called \enquote{Docker shim}) is using the internal mechanisms from Docker to run containers. The versions in Linux are using control group isolation.
+
+For \ac{Windows}, there are two different isolation modes available. The first option is using the process isolation (so called \enquote{Host process isolation}) mode offered by ContainerD. It can be enabled by switching to \enquote{\ac{Windows} Containers}. It is the default mode for Windows Server systems.
+However, older versions of Docker and Docker on Windows 10 and above have the opposite behavior\cite{RamosApolinario.2021}. On client versions of Windows, a dedicated hypervisor-isolated virtualization (so called \enquote{Hyper-V isolation}) is the default option\cite{RamosApolinario.2021}. This means, during the installation of Docker on \ac{Windows}, the underlying Windows container host creates a separate Hyper-V \ac{VM} to run container images. However, this is not a regular Hyper-V \ac{VM}\cite{RamosApolinario.2021}. Instead, it is a purpose-built \ac{VM}, often referred to as utility \ac{VM} or UVM that can't be managed directly and is fully controlled by the \ac{Windows} container runtime\cite{RamosApolinario.2021}. For networking, the internal mechanisms from Docker are used. All running containers are deployed inside the dedicated Hyper-V \ac{VM}. Therefore, this is a mixture of process isolation and full isolation using virtualization.
+
+However, the hypervisor approach still has the disadvantage of using large resources for containers, even though they are running in one virtual machine. In addition, containers running in hypervisor isolation take longer to start up than those running in process isolation\cite{RamosApolinario.2021}.
+
 
 \subsection{ContainerD}
-ContainerD is a native version of a container runtime. Newer versions of Docker on Linux, are running ContainerD under the hood for process isolation. On \ac{Windows}, ContainerD uses slim host process isolation.  The process isolation with ContainerD consists of multiple abstraction layers (shown in \autoref{fig.containerd-architecture}). Its back end contacts the containerd-shim which is maintaining an abstraction layer for communication for the underlying layers (depending on Linux and \ac{Windows}). Below that, \ac{Windows} offers a custom fork of the \ac{CLI} \textit{runc}, so called \textit{runhcs}\cite{Scooley.2022}. Using \textit{runc}, new containers can be created by running a simple command\cite{Scooley.2022}. The layer for \textit{runhcs} connects to the \ac{HCS} which is another abstraction layer of \ac{Windows} for providing a stable \ac{API} to the low level functionality of the \ac{OS}\cite{Microsoft.2017}. ContainerD does not come with any mechanisms for networking. Instead, this is in responsibility of the \ac{HCS}.
+ContainerD is a native version of a container runtime. Newer versions of Docker on Linux are running ContainerD as a basis for process isolation. On \ac{Windows}, ContainerD uses slim host process isolation.  The process isolation with ContainerD consists of multiple abstraction layers (shown in \autoref{fig.containerd-architecture}). Its back end contacts the containerd-shim which is maintaining an abstraction layer for communication for the underlying layers (depending on Linux and \ac{Windows}). Below that, \ac{Windows} offers a custom fork of the \ac{CLI} \textit{runc}, so called \textit{runhcs}\cite{Scooley.2022}. Using \textit{runc}, new containers can be created by running a simple command\cite{Scooley.2022}. The layer for \textit{runhcs} connects to the \ac{HCS} which is another abstraction layer of \ac{Windows} for providing a stable \ac{API} to the low level functionality of the \ac{OS}\cite{Microsoft.2017}. ContainerD does not come with any mechanisms for networking. Instead, this is in responsibility of the \ac{HCS}.
 
 The developers of \ac{K8s} marked the Docker \ac{CRI} as deprecated in version v1.20\cite{Kubernetes.2020}. Since version v1.23 of \ac{K8s}, Docker was fully removed which lead to ContainerD being the only available \ac{CRI} for \ac{Windows} containers.
 
@@ -153,18 +162,11 @@ The developers of \ac{K8s} marked the Docker \ac{CRI} as deprecated in version v
 	\label{fig.containerd-architecture}
 \end{figure}
 
-% TODO: CLI tools for ContainerD
 There are two \ac{CLI} tools that work with ContainerD. The tool \enquote{ctr} is the low level \ac{CLI} tool that is shipped with ContainerD.  \enquote{nerdctl} is a tool that is similar to the Docker \ac{CLI}  and supports the same set of commands and options as Docker. Compared to \enquote{ctr}, however, \enquote{nerdctl} is more feature-rich.
 
 
-\subsection{Docker Container Runtime Interface}
-The Docker \ac{CRI} (so called \enquote{Docker shim}) is using the internal mechanisms from Docker to run containers. Older versions in Linux were using control group isolation.
 
-For \ac{Windows}, there are two different isolation modes available. The first option is using the process isolation (so called \enquote{Host process isolation}) mode offered by ContainerD. It can be enabled by switching to \enquote{\ac{Windows} Containers}. It is the default mode for Windows Server systems.
-However, older versions of Docker and Docker on Windows 10 and above have the opposite behavior\cite{RamosApolinario.2021}. On client versions of Windows, a dedicated hypervisor-isolated virtualization (so called \enquote{Hyper-V isolation}) is the default option\cite{RamosApolinario.2021}. This means, during the installation of Docker on \ac{Windows}, the underlying Windows container host creates a separate Hyper-V \ac{VM} to run container images. However, this is not a regular Hyper-V \ac{VM}\cite{RamosApolinario.2021}. Instead, it is a purpose-built \ac{VM}, often referred to as utility \ac{VM} or UVM that can't be managed directly and is fully controlled by the \ac{Windows} container runtime\cite{RamosApolinario.2021}. For networking, the internal mechanisms from Docker are used. All running containers are deployed inside the dedicated Hyper-V \ac{VM}. Therefore, this is a mixture of process isolation and full isolation using virtualization.
-
-However, the hypervisor approach still has the disadvantage of using large resources for containers, even though they are running in one virtual machine. In addition, containers running in hypervisor isolation take longer to start up than those running in process isolation\cite{RamosApolinario.2021}.
-
+Currently, container networking with ContainerD is not well-established on \ac{Windows}~\cite{GitHub.20230202,GitHub.20230202b,Github.2022_258,GitHub.20230202c} even though the docker runtime is already removed in current versions of \ac{K8s}~\cite{Kubernetes.2020}. However, these are the only two working container backends for \ac{Windows} containers. Therefore ContainerD as container backend was chosen.
 
 
 
@@ -187,15 +189,15 @@ On top of the base image, customizations and the actual application are applied.
 Therefore, the environment variables needs to be set up as part of the container file.
 The root certificate (certificate authority) is passed as file mount into the container later on.
 
-
+\vspace{2em}
 \section{Target architecture}
-The application is distributed on multiple systems. \ac{K8s} supports application rollouts only as container images. To be able to distribute the services on a cluster management tool a containerization of the application is necessary.
-Each service shall be served on the cluster to profit from the features which \ac{K8s} offers. For example, it must be possible to offer multiple replications of services - with the compute services included. This is the only way to ensure that the application can be delivered reliably. 
+The application is distributed on multiple hosts. \ac{K8s} supports application rollouts only as container images. To be able to distribute the services on a cluster management tool a containerization of the application is necessary.
+Each service must be operated on the cluster to profit from the features which \ac{K8s} offers. For example, it should be possible to offer multiple replications of services - with the compute services included. This is the only way to ensure that the application can be delivered reliably. 
 However, for testing the feasibility it is sufficient to deploy only the main services as a first step. This involves \ac{GSS}, \ac{LSS} and \ac{AUTH}. Subsequently, the \ac{LSS} spawns the compute services as sub processes inside the same container. In order to communicate with the \ac{UI} front end, the connection between the external network and the relay service has to be ensured.
 
 The MongoDB server is not required to run on \ac{Windows}. Because setting it up on Linux is easier and better supported, a dedicated Linux node for running the MongoDB server is preferred. Furthermore, automation for a MongoDB container image on \ac{Windows} is currently unsupported, because of an design limitation in Windows containers\cite{GitHub.20230317}. The \ac{OT} services, however, have to run on \ac{Windows} and are therefore deployed on a \ac{Windows} node.
 
-The encrypted communication between services has to be ensured. As a consequence, the certificates need to be accessible for each service. The certificate files shall be published on the container file system using file mounts. This increases flexibility because files can be easily swapped out, and generated for each service outside the container. Certificate files then have to be created during pod creation.
+The encrypted communication between services has to be ensured. As a consequence, the certificates need to be accessible for each service. The certificate files shall be published on the container file system using file mounts. This increases flexibility, because files can be easily swapped out and generated for each service outside the container. Certificate files then have to be created during pod creation.
 However, as a first step, the certificates are generated as part of the image build process to keep the automation simpler.
 
 

@@ -167,10 +167,12 @@
 
 \null\vfill % Add some space to move the quote down the page a bit
 
-\textit{``Thanks to my solid academic training, today I can write hundreds of words on virtually any topic without possessing a shred of information, which is how I got a good job in journalism."}
+\begin{center}
+	\textit{``Obstacles don’t have to stop you. If you run into a wall, don’t turn around and give up. Figure out how to climb it, go through it, or work around it."}
+\end{center}
 
 \begin{flushright}
-Dave Barry
+Michael Jordan
 \end{flushright}
 
 \vfill\vfill\vfill\vfill\vfill\vfill\null % Add some space at the bottom to position the quote just right
@@ -184,8 +186,8 @@ Dave Barry
 \addtotoc{Abstract} % Add the "Abstract" page entry to the Contents
 
 \abstract{\addtocontents{toc}{\vspace{1em}} % Add a gap in the Contents, for aesthetics
-This thesis explores the feasibility of deploying a \ac{Windows} based microservice application using \ac{K8s}. It is showcased on the basis of \ac{OT}, which is a distributed application for computer aided design and physics simulation, where the computations can be performed server-side, while the operation by the user stays client-side.
-It turns out, that deploying the application is challenging. Some changes on the application itself have to be done. Further, finding information for setting up \ac{Windows} based \ac{K8s} clusters is not as easy as it seems. A problem was the ongoing switch from Hyper-V isolation to process isolation, because the new technology is not yet supported throughout the application landscape of \ac{K8s}.
+This thesis explores the feasibility of deploying a \ac{Windows} based microservice application using \ac{K8s}. It is showcased on the basis of \ac{OT}, which is a application for computer aided design and physics simulation. \ac{OT} is a distributed application where the computations can be performed server-side, while the operation by the user stays client-side.
+It turns out, that deploying the application is challenging. Some changes on the application itself have to be done, especially in respect of the mutual authentication that comes to use. Further, finding information for setting up \ac{Windows} based \ac{K8s} clusters is not as easy as it seems. A problem was the ongoing switch from Hyper-V isolation to process isolation, because the new technology is not yet supported throughout the application landscape of \ac{K8s}.
 Thus, the thesis provides value for a rather unexplored field, because the usage of \ac{Windows} containers for deployment is not well explored yet.
 }
 
@@ -195,14 +197,14 @@ Thus, the thesis provides value for a rather unexplored field, because the usage
 %	ACKNOWLEDGEMENTS
 %----------------------------------------------------------------------------------------
 
-\setstretch{1.3} % Reset the line-spacing to 1.3 for body text (if it has changed)
+\setstretch{1.5} % Reset the line-spacing to 1.3 for body text (if it has changed)
 
 \acknowledgements{\addtocontents{toc}{\vspace{1em}} % Add a gap in the Contents, for aesthetics
 
 
 First of all, I wish to thank my supervisors. Prof. Dr. Peter Thoma provided outstanding support for writing the thesis. He guided my work and helped to keep the motivation high. Prof. Dr. Eicke Godehardt taught me the fundamentals of Cloud Computing and Software Engineering that were required to have a basic understanding of the topic.
 
-I am grateful to my friends and fellow students who proofread the thesis. I would especially like to thank Lucas Sambale and Johannes Krafft, who both gave me qualitative thorough feedback.
+I am grateful to my friends and fellow students who proofread the thesis. I would especially like to thank Johannes Krafft and Lucas Sambale, who both gave me qualitative thorough feedback.
 
 Lastly, I wish to thank my supportive family. They have been with me throughout my studies and have given me the support I needed. Without their love and guidance I would not be where I am today.
 

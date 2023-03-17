@@ -8,18 +8,19 @@
 \lhead{Chapter \ref*{chap:background}. \emph{Background and problem statement}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
 
 \section{Application under study}
-\acf{OT} is a open-source simulation platform developed by the university of Applied Sciences in Frankfurt, Germany. It covers features like computer aided design and meshing and is also a physics simulation (having solvers for Finite Integration and PHREEC). The projects can be administered by a user and group management (see~\autoref{fig:ot-project}). Furthermore, all changes on a project are version-controlled. The application is designed in a way, that only a local thin-client needs to run on the users computer. After entering the login credentials (see~\autoref{fig:ot-login}), the client securely connects to a centralized service platform where the computation is made. The results and even the \ac{UI} information is sent back to the client application. This has the benefit, that also weak computers can run the application.
+\acf{OT} is an open-source simulation platform developed by the university of Applied Sciences in Frankfurt, Germany. It covers features like computer aided design and meshing and is also a physics simulation (having solvers for Finite Integration and PHREEC). The projects can be administered by a user and group management (see~\autoref{fig:ot-project}). Furthermore, all changes on a project are version-controlled. The application is designed in a way, that only a local thin-client needs to run on the users computer. After entering the login credentials (see~\autoref{fig:ot-login}), the client securely connects to a centralized service platform where the computation is made. The results and even the \ac{UI} information is sent back to the client application.  This has the benefit, that also underpowered computers can run the application.
+Further details about the network protocol are explained later in this section.
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=.9\textwidth]{Figures/ot-project.png}
+	\fbox{\includegraphics[width=.9\textwidth]{Figures/ot-project.png}}
 	\caption{The \ac{OT} project overview.}
 	\label{fig:ot-project}
 \end{figure}
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=.9\textwidth]{Figures/ot-login.png}
+	\fbox{\includegraphics[width=.9\textwidth]{Figures/ot-login.png}}
 	\caption{The \ac{OT} login screen.}
 	\label{fig:ot-login}
 \end{figure}
@@ -27,8 +28,8 @@
 \autoref{fig:ot-model} shows the application itself with a loaded project and a simple geometric model.
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=.9\textwidth]{Figures/ot-model.png}
-	\caption{A opened project inside \ac{OT} with a few created geometric models and subtracted computation.}
+	\fbox{\includegraphics[width=.9\textwidth]{Figures/ot-model.png}}
+	\caption{An opened project inside \ac{OT} with a few created geometric models and a boolean operation.}
 	\label{fig:ot-model}
 \end{figure}
 
@@ -39,16 +40,16 @@ The development team consists of a small core team and several student groups du
 \label{chap:background.baseline_architecture}
 The current system design consists of multiple levels. It is a multi-process application based on the programming languages C++ and Rust. The source code is mainly aligned to be built on Microsoft \ac{Windows}. A port to Unix based systems is currently in work. Therefore parts of the code base are aligned for multiple system architectures already, but the application is not yet able to be compiled for Linux.
 
-Each microservice of the application is included dynamically and linked as a \ac{DLL} file. For starting the microservice environment, a central executable (\enquote{open\_\ twin.exe}) is started with the corresponding arguments for the services (like the server's binding address, port numbers, and passwords) (see~\autoref{lst:ot-command}) and the path to the \ac{DLL} file itself. The UI front end, which is started by the user directly, is compiled in its own executable (\enquote{uiFrontend.exe}).
+Each microservice of the application is included dynamically and linked as a \ac{DLL} file. For starting the microservice environment, a central executable (\enquote{open\_\ twin.exe}) is started with the corresponding arguments for the services (like the server's binding address, port numbers, and passwords) (see~\autoref{lst:ot-command}) and the path to the \ac{DLL} file itself. The \ac{UI} front end, which is started by the user directly, is compiled in its own executable (\enquote{uiFrontend.exe}).
 
 \begin{lstlisting}[language=sh, caption={Command line of Open Twin Service start}, label=lst:ot-command]
 open_twin.exe GlobalSessionService.dll \
   "0" "127.0.0.1:8091" "tls@127.0.0.1:27017" "127.0.0.1:8092"
 \end{lstlisting}
 
-For conveniently running the services with all their necessary arguments, batch files were provided that read environment variables and convert them into runtime arguments for the service executable. Therefore, if the services are started locally, the user runs a batch file that sets up the environment for the network binding details, path to certificates and encrypted database credentials.
+For conveniently running the services with all their necessary arguments, batch files are provided that read environment variables and convert them into runtime arguments for the service executable. Therefore, if the services are started locally, the user runs a batch file that sets up the environment for the network binding details, path to certificates and encrypted database credentials.
 
-The system consists of the following micro services that are permanently accessible: \acf{GSS}, \acf{AUTH} and the database. The database is running on MongoDB\footnote{MongoDB:~https://www.mongodb.com/}. Another Service is the \acf{LSS} that spawns the so called compute services. Those are services for running the actual computation after opening a project that can dynamically spawn and exit. A partial list of compute services and their corresponding tasks can be found in \autoref{tbl:ot-compute-services}.
+The system consists of the following microservices that are permanently accessible: \acf{GSS}, \acf{AUTH} and the database. The database is running on MongoDB\footnote{MongoDB:~https://www.mongodb.com/}. Another Service is the \acf{LSS} that spawns the so called compute services. Those are services for running the actual computation after opening a project that can dynamically spawn and exit. A partial list of compute services and their corresponding tasks can be found in \autoref{tbl:ot-compute-services}.
 Each service runs in its own \ac{OS} process.
 
 \begin{table}[h!]
@@ -75,12 +76,12 @@ Each service runs in its own \ac{OS} process.
 The Visualization Service requires features from version 2.0 of the graphics library OpenGL\footnote{OpenGL: https://opengl.org/}. Systems where no graphics card is installed or systems that run a server \ac{OS} do not have OpenGL 2.0 available. For these environments the \ac{DLL} file \enquote{opengl32sw.dll} in the installation directory can be renamed to \enquote{opengl32.dll}. This enables software rendering and allows system to run \ac{OT} that do not meet this requirement.
 
 As shown in \autoref{fig:ot-network-communication-diagram}, the services can be separated by their network space on multiple levels. Not all services require a public available network address.
-While \ac{GSS}, \ac{AUTH} and database are globally accessible via a fixed network address, the \ac{LSS} can theoretically run on a dedicated host and is only communicated to other parties after it has registered itself to the \ac{GSS}. The services, spawned by \ac{LSS} do not require a public address space either. All communication between the \ac{UI} front end and the compute services is achieved via a relay service and a web socket communication channel.
+While \ac{GSS}, \ac{AUTH} and database are globally accessible via a fixed network address, the \ac{LSS} can theoretically run on a dedicated host and is only communicated to other parties after it has registered itself to the \ac{GSS}. The services, spawned by \ac{LSS}, do not require a public address space either. All communication between the \ac{UI} front end and the compute services is achieved via a relay service and a WebSocket\cite{Fette.2011} communication channel.
 
 \begin{figure}[ht]
 	\centering
 	\includegraphics[width=0.8\textwidth]{Figures/opentwin-network-communication-diagram.pdf}
-	\caption{Communication overview and service organization for \ac{OT} main services. In 1.1 the \ac{LSS} registers at \ac{GSS}. As soon as the \ac{UI} front end connects to the \ac{GSS}~(2.1), service information is exchanged~(2.2) and the user is authenticated~(2.3). As a consequence, the \ac{GSS} creates a new session and tells the \ac{LSS} to spawn new compute services. From now on the \ac{UI} front end communicates directly with the Compute services via the Relay Service over a web socket connection.}
+	\caption{Communication overview and service organization for \ac{OT} main services. In 1.1 the \ac{LSS} registers at \ac{GSS}. As soon as the \ac{UI} front end connects to the \ac{GSS}~(2.1), service information is exchanged~(2.2) and the user is authenticated~(2.3). As a consequence, the \ac{GSS} creates a new session and tells the \ac{LSS} to spawn new compute services. From now on the \ac{UI} front end communicates directly with the Compute services via the Relay Service over a WebSocket connection.}
 	\label{fig:ot-network-communication-diagram}
 \end{figure}
 
@@ -93,7 +94,7 @@ Once started, the user can login. In order to connect to the database, the follo
 \item If the \ac{AUTH} replies with a positive authentication, the \ac{UI} front end connects to the database and lists the projects.
 \item Once a project is opened or created, the \ac{UI} front end requests a new session from the \ac{GSS}. The \ac{GSS} replies with the connection \acp{URL} of the \ac{LSS}. The \ac{LSS} has been registered to the \ac{GSS} during its initialization.
 \item The \ac{UI} front end then connects to the \ac{LSS} and requests a new session. As a result, the \ac{LSS} spawns new application service processes and replies with the respective service \acp{URL}.
-\item From now on, the \ac{UI} front end communicates with the application services via the Relay service over a web socket.
+\item From now on, the \ac{UI} front end communicates with the application services via the Relay service over a WebSocket.
 \end{enumerate}
 
 \begin{figure}[ht]
@@ -173,7 +174,7 @@ In general, there are two different options for isolating applications in cloud 
 Virtualization (or \acp{VM}) allows the software simulation of physical hardware to an \acp{OS}. The real hardware is faked to the \ac{OS} kernel and the \ac{VM} can, under optimal conditions, not distinguish between whether it is running on real hardware or if it runs in a simulation. Because \acp{VM} just run as a software on a physical machine (the so called \enquote{host computer}), it provides the possibility for operating multiple computers on one physical machine.
 The fundamental architecture of the virtualization technology is shown in \autoref{fig:background.virtualization}.
 
-\begin{figure}[b]
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=0.65\textwidth]{Figures/virtualization.pdf}
 	\caption{Brief presentation of the virtualization technology\cite{RamosApolinario.2021, Warrier.20201120}. Multiple \acp{OS} run on the same physical machine simultaneously. The hardware is mocked by the hypervisor layer.}
@@ -188,13 +189,13 @@ Besides isolating the \ac{OS} kernel and all of its processes, the network layer
 \end{itemize}
 
 
-Microsoft offers with \enquote{Hyper-V} its own virtualization software since \enquote{Windows 8}. % TODO: Beleg
+Microsoft offers with Hyper-V its own virtualization software since Windows 8\cite{Microsoft.2013}.
 
 
 \subsection{Container}
 As shown in \autoref{fig:background.container}, Container have a more lightweight concept of isolation compared to virtualization. Instead of providing an isolation layer for both, the \ac{OS} kernel and the running processes, only the processes are isolated (\enquote{process isolation}). Compared to virtualization, this increases performance of the isolated processes and reduces the startup time.
 
-\begin{figure}[b]
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=0.5\textwidth]{Figures/containerization.pdf}
 	\caption{Brief presentation of the containerization technology\cite{RamosApolinario.2021, Warrier.20201120}. Each isolated process runs inside a container, the \ac{OS} kernel is shared.}
@@ -222,17 +223,16 @@ If images are not available on a host system, they are \enquote{pulled} from a \
 
 
 \section{Problem statement}
-Even though, the application is clearly based on a microservice architecture and is able to run on a distributed system, it is not designed for an automated cluster yet.
+Even though the application is clearly based on a microservice architecture and is able to run on a distributed system, it is not designed for an automated cluster yet. 
 
 Containerization of the system has never been tested and needs to be introduced. 
 This is why one focus lies on the containerization of the application. Due to its complexity with \ac{mTLS} encrypted communication and its sophisticated behavior with spawning new processes on demand, the containerization on \ac{Windows} based system is challenging.
-Moreover, virtualization on \ac{Windows} has shifted more and more towards containerization in recent years. Nevertheless, true process isolation is still a rather rarely used technology under Windows. This circumstance makes research and development of \ac{Windows} containers quite challenging and therefore containerization of the application must be investigated first.
+Moreover, virtualization on \ac{Windows} has shifted more and more towards containerization in recent years. Nevertheless, true process isolation is still a rather rarely used technology under Windows. This circumstance makes research and development of \ac{Windows} containers quite complex and therefore containerization of the application must be investigated first.
 
 As prerequisite, the application needs to be adapted. Error handling and logging is not present in the current application. 
-Even though the front end application does write logs, the microservices currently do not produce log files. Instead, only a few sub processes write the information on its standard output stream. In some cases, the error information given by exceptions is dropped.
+Even though the front end application does write logs, the microservices currently do not produce log files. Instead, only a few sub processes write the information on their standard output stream. In some cases, the error information given by exceptions is dropped.
 Furthermore, proper exit codes in error cases are not returned. That is, if the application exits there is currently no way to detect if the process terminated normally or crashed as part of an error.
-Therefore, for simplifying development of the container image logging must be introduced and proper error handling should be optimized.
-
+Therefore, for simplifying development of the container image, logging must be introduced and proper error handling should be optimized.
 
 The second focus lies on the setup of the cluster with regards to \ac{Windows} nodes.
 First, the cluster engine needs to be set up. Since clustering with \ac{Windows} containers is uncommon, preliminary studies where \ac{Windows} nodes are part of a cluster are rare. Some cluster designs should be probed to provide a qualitative statement about which configuration is feasible.
@@ -240,10 +240,11 @@ After adding the \ac{Windows} node to the cluster, the network interface has to 
 The created containerized application must be provided to the cluster engine so that it can be rolled out. Thus, automatic deployment of the developed images in the cluster engine has to be investigated. 
 The functional connectivity of the services has to be ensured by checking the connectivity with regards to the \ac{mTLS} encryption.
 
+%As a proof of concept, the \ac{LSS} is containerized and a cluster is set up with one \ac{Windows} node.
 
 \section{Limitations}
-Due to the limited amount of time, not all code changes are applied. On the one hand, this involves the adaption for automatic extension of services. On the other hand, it implies the changes required to make the application more fault-tolerant. The changes that would be necessary, would be too extensive. Therefore, they are only made to the main processes.
+The time frame for performing the task is limited. This is why not all code changes are applied. This involves the adaption for automatic extension of services, but also implies the changes required to make the application more fault-tolerant. The changes that would be necessary, would be too extensive. Therefore, they are only made to the main processes.
 
 This thesis aims to provide a proof of concept for shifting an existing application to the cluster. Since the previous research in the field of host-process container applications is rather limited, the focus is on the investigation of using \ac{Windows} nodes as part of the cluster.
-This is why the application is not fully containerized. As part of this study, only the main services are containerized and the cluster is set up to investigate the behavior in cluster environments. 
-Instead of offering a complete step-by-step guide, challenges during the development of the deployment automation are found.
+This is why the application is not fully containerized. The main services are containerized and the cluster is set up to investigate the behavior in cluster environments. 
+Rather than providing a complete step-by-step guide, it highlights the challenges of developing deployment automation for \ac{Windows}.
