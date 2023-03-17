@@ -61,8 +61,8 @@ The newly defined variables \tcode{pause\_prefix} and \tcode{pause\_suffix} are 
 
 \begin{figure}[hb]
 	\centering
-	\includegraphics[width=1\textwidth]{Figures/pause_batch_file.png}
-	\caption{Application errors in verbosity mode, shown with \ac{GSS} and \ac{LSS}. The user is now able to read the errors since, new the processes are started in new windows and wait for user interaction.}
+	\includegraphics[width=.98\textwidth]{Figures/pause_batch_file.png}
+	\caption{Application errors in verbosity mode, shown with \ac{GSS} and \ac{LSS}. The user is now able to read the errors, since the processes are started in new windows and wait for user interaction.}
 	\label{fig.implementation.pause_batch}
 \end{figure}
 
@@ -71,7 +71,7 @@ For improving the error tracing, the overall log amount has been increased. This
 Currently, there is an ongoing work to replace the logging from standard output by forwarding the log lines to a central logging service. The library offers C++ macros for sending log messages to this logging service.  However, the logging service is currently not yet fully implemented. This is why the logging mechanism did not use logging to standard output. Instead, calls to the respective macro functions for logs were just ignored. This was changed and logging to standard output has been introduced. 
 \begin{lstlisting}[label=lst:implementation.log_message_filter, caption={Comparison of the set log level with the log severity of the message. (\textit{/Libraries/OpenTwinCommunication/src/ServiceLogger.cpp})}, language=c++, firstnumber=60]
 if (((int)_severity) < ((int)m_logLevel)) {
-	return;
+  return;
 }
 \end{lstlisting}
 Log messages also have information stored about their severity that can be converted from \enquote{enum} values to their numeric representation. With respect of the high amount of printed log messages, they are now filtered by their severity. This filter mechanism is shown in \autoref{lst:implementation.log_message_filter}. If the converted log severity is less than the defined log level, the log message is ignored.
@@ -310,7 +310,7 @@ The successful join of the node is verified by running \tcode{kubectl get nodes}
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=.98\textwidth]{Figures/kubectl_get_nodes.png}
-	\caption{Output of \tcode{kubectl get nodes} command after adding a Windows node to the cluster.}
+	\caption{Output of \tcode{kubectl get nodes} command after adding a Windows node to the cluster. The nodes are ready to run pods.}
 	\label{fig:implementation.kubectl_get_nodes}
 \end{figure}
 
