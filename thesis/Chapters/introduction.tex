@@ -1,4 +1,7 @@
 % !TeX spellcheck = en_US
+
+% ==== Containerized multi-level deployment for a distributed adaptive microservice application ====
+
 % Chapter 1
 
 \chapter{Introduction} % Main chapter title
@@ -7,39 +10,35 @@
 
 \lhead{Chapter  \ref*{chap:introd}. \emph{Introduction}} % This is for the header on each page - perhaps a shortened title
 
-%\begin{figure}[htbp]
-%	\centering
-%		\includegraphics{Figures/Electron.pdf}
-%		\rule{35em}{0.5pt}
-%	\caption[An Electron]{An electron (artist's impression).}
-%	\label{fig:Electron}
-%\end{figure}
 
-%\begin{verbatim}
-%\begin{equation}
-%E = mc^{2}
-%  \label{eqn:Einstein}
-%\end{equation}
-%\end{verbatim}
-%\begin{equation}
-%E = mc^{2}
-%\label{eqn:Einstein}
-%\end{equation}
+With the deployment of applications on distributed systems, they can nowadays profit from more reliability and availability. Additionally, the services can gain a higher performance due to horizontal scaling mechanisms. This means, instead of increasing performance by upgrading the hardware, the services are accessible on multiple servers.
+Microservice applications consist of multiple services where each service fulfills its specific task. They meet the requirements for 
 
 
-%----------------------------------------------------------------------------------------
+Applications that are served on a cluster need to fulfill the corresponding architecture requirements for a cluster environment.  and they 
+
+This thesis explores the design and development of an cluster for an microservice application.
+With regards to the automation of steps.
+
+The requirements for serving applications in a cluster are the underlying
+
+ the dependency on external services is high. 
+
+The application under study, \acf{OT}, is well prepared for a cluster deployment.
+
+\ac{K8s} was mainly used on Linux systems in the past
+
+ there is a growing need to deploy microservice applications on Windows platforms as well. 
+
+The thesis examines the challenges involved in deploying such an application on Windows
 
 
+The research field of cluster deployment with ContainerD is still in the beginning state for \ac{Windows}.
 
 
-This thesis is about the deployment of a microservice application.
+Through this work, the thesis aims to provide a valuable resource for research groups who want to deploy applications on Windows using common cluster management tools.
 
-
-ContainerD is a relatively new container runtime and replaces the runtime of Docker (mostly referred to as Docker).
-The research field of cluster deployment is still in the beginning state for \ac{Windows} in relationship to ContainerD.
-
-
-
+% TODO: Wenig vorarbeiten
 % TODO: Multi-layer to explain
 
 \section{Scope}
@@ -47,4 +46,7 @@ The research field of cluster deployment is still in the beginning state for \ac
 
 
 \section{Outline}
-
+The first chapter (\autoref{chap:background}) of the thesis provides a brief introduction into \ac{OT} and its architecture. Furthermore, it introduces its encryption protocol and gives an outline about the thesis. In \autoref{chap:design} the major design decisions are explained. It dives into the used container engine and the chosen cluster management software and their alternatives.
+The design decisions are implemented in \autoref{chap:implementation}. This is where the application is adapted by the required changes. The application is containerized, and the cluster is set up. Moreover, the probed options for designing the cluster are presented and the deployment of an application is shown.
+The findings are discussed in \autoref{chap:results}. A deeper look is taken in challenges that occurred during the implementation and the underlying reasons.
+The thesis ends with \autoref{chap:conclusion} and gives an overview about the learned lessons and the conclusion. Additionally, it shows points of contact for future work.

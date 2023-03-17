@@ -1,11 +1,11 @@
 % !TeX spellcheck = en_US
 % Chapter Template
 
-\chapter{Background and related work} % Main chapter title
+\chapter{Background and problem statement} % Main chapter title
 
 \label{chap:background} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
 
-\lhead{Chapter \ref*{chap:background}. \emph{Background and related work}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
+\lhead{Chapter \ref*{chap:background}. \emph{Background and problem statement}} % Change X to a consecutive number; this is for the header on each page - perhaps a shortened title
 
 \section{Application under study}
 \acf{OT} is a open-source simulation platform developed by the university of Applied Sciences in Frankfurt, Germany. It covers features like computer aided design and meshing and is also a physics simulation (having solvers for Finite Integration and PHREEC). The projects can be administered by a user and group management (see~\autoref{fig:ot-project}). Furthermore, all changes on a project are version-controlled. The application is designed in a way, that only a local thin-client needs to run on the users computer. After entering the login credentials (see~\autoref{fig:ot-login}), the client securely connects to a centralized service platform where the computation is made. The results and even the \ac{UI} information is sent back to the client application. This has the benefit, that also weak computers can run the application.
@@ -222,16 +222,28 @@ If images are not available on a host system, they are \enquote{pulled} from a \
 
 
 \section{Problem statement}
-Even though, the application is clearly based on a microservice architecture and it is able to run on a distributed system, it is not designed for an automated cluster yet.
-Furthermore, Containerization of the system has never been tested and needs to be introduced. 
-First, the cluster engine needs to be set up for \ac{Windows} compute nodes to allow \ac{Windows} containers to run inside the cluster. Additionally, it needs to have full network capabilities as well as inter connectivity between the several services.
-Next, the application needs to run inside containers. Therefore, container images must be created and provided for the cluster engine. 
-Additionally, the automatic extension of services requires communication between the cluster orchestration management and the applications running on the nodes. A feature that needs to be introduced later on.
+Even though, the application is clearly based on a microservice architecture and is able to run on a distributed system, it is not designed for an automated cluster yet.
 
-Regarding logging, while the front end application does, the microservices currently do not produce log files. Instead, only a few sub processes write the information on its standard output stream. In some cases, the error information given by exceptions is dropped.
+Containerization of the system has never been tested and needs to be introduced. 
+This is why one focus lies on the containerization of the application. Due to its complexity with \ac{mTLS} encrypted communication and its sophisticated behavior with spawning new processes on demand, the containerization on \ac{Windows} based system is challenging.
+Moreover, virtualization on \ac{Windows} has shifted more and more towards containerization in recent years. Nevertheless, true process isolation is still a rather rarely used technology under Windows. This circumstance makes research and development of \ac{Windows} containers quite challenging and therefore containerization of the application must be investigated first.
+
+As prerequisite, the application needs to be adapted. Error handling and logging is not present in the current application. 
+Even though the front end application does write logs, the microservices currently do not produce log files. Instead, only a few sub processes write the information on its standard output stream. In some cases, the error information given by exceptions is dropped.
 Furthermore, proper exit codes in error cases are not returned. That is, if the application exits there is currently no way to detect if the process terminated normally or crashed as part of an error.
+Therefore, for simplifying development of the container image logging must be introduced and proper error handling should be optimized.
+
+
+The second focus lies on the setup of the cluster with regards to \ac{Windows} nodes.
+First, the cluster engine needs to be set up. Since clustering with \ac{Windows} containers is uncommon, preliminary studies where \ac{Windows} nodes are part of a cluster are rare. Some cluster designs should be probed to provide a qualitative statement about which configuration is feasible.
+After adding the \ac{Windows} node to the cluster, the network interface has to be set up to provide connectivity between the services and nodes. 
+The created containerized application must be provided to the cluster engine so that it can be rolled out. Thus, automatic deployment of the developed images in the cluster engine has to be investigated. 
+The functional connectivity of the services has to be ensured by checking the connectivity with regards to the \ac{mTLS} encryption.
+
 
 \section{Limitations}
 Due to the limited amount of time, not all code changes are applied. On the one hand, this involves the adaption for automatic extension of services. On the other hand, it implies the changes required to make the application more fault-tolerant. The changes that would be necessary, would be too extensive. Therefore, they are only made to the main processes.
 
-As a first case study, the application is not fully containerized. Since the network connectivity is known to cause troubles in \ac{Windows} container networks, there is more investigation required later on. As part of this study, only the main services are containerized and the cluster is set up to investigate the behavior in cluster environments. The actual distribution of an full functional cluster network can be part of further studies later on.
+This thesis aims to provide a proof of concept for shifting an existing application to the cluster. Since the previous research in the field of host-process container applications is rather limited, the focus is on the investigation of using \ac{Windows} nodes as part of the cluster.
+This is why the application is not fully containerized. As part of this study, only the main services are containerized and the cluster is set up to investigate the behavior in cluster environments. 
+Instead of offering a complete step-by-step guide, challenges during the development of the deployment automation are presented.
